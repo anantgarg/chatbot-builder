@@ -6,10 +6,10 @@ import { Prisma } from '@prisma/client'
 
 export async function POST(
   request: Request,
-  { params }: { params: { id: string } }
+  context: { params: { id: string } }
 ) {
   try {
-    const cookieStore = cookies()
+    const cookieStore = await cookies()
     const token = cookieStore.get('token')?.value
     if (!token) {
       return NextResponse.json(
@@ -31,7 +31,7 @@ export async function POST(
     // Verify bot ownership
     const bot = await prisma.bot.findFirst({
       where: {
-        id: params.id,
+        id: context.params.id,
         userId: payload.userId
       }
     })
@@ -46,7 +46,7 @@ export async function POST(
     // Update bot with integration settings
     const updatedBot = await prisma.bot.update({
       where: {
-        id: params.id
+        id: context.params.id
       },
       data: {
         cometChatEnabled: data.cometChatEnabled,
@@ -69,10 +69,10 @@ export async function POST(
 
 export async function GET(
   request: Request,
-  { params }: { params: { id: string } }
+  context: { params: { id: string } }
 ) {
   try {
-    const cookieStore = cookies()
+    const cookieStore = await cookies()
     const token = cookieStore.get('token')?.value
     if (!token) {
       return NextResponse.json(
@@ -92,7 +92,7 @@ export async function GET(
     // Fetch bot with integration settings
     const bot = await prisma.bot.findFirst({
       where: {
-        id: params.id,
+        id: context.params.id,
         userId: payload.userId
       },
       select: {
