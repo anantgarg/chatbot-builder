@@ -33,7 +33,6 @@ A platform for creating and managing AI-powered chatbots with OpenAI integration
    Now open `.env` and update the following values:
    - `OPENAI_API_KEY`: Your OpenAI API key from https://platform.openai.com/account/api-keys
    - `JWT_SECRET`: A secure random string for JWT token signing
-   - (Optional) CometChat credentials if you plan to use chat integration
 
 4. **Initialize the database**
    ```bash
@@ -66,7 +65,7 @@ A platform for creating and managing AI-powered chatbots with OpenAI integration
 - OpenAI integration for AI-powered responses
 - File upload and management
 - Vector store for improved response accuracy
-- Optional CometChat integration for real-time chat
+- Optional CometChat integration for real-time chat (configurable through bot settings)
 - Secure authentication system
 
 ## Environment Variables
@@ -74,9 +73,6 @@ A platform for creating and managing AI-powered chatbots with OpenAI integration
 - `DATABASE_URL`: SQLite database path (default: "./prisma/dev.db")
 - `OPENAI_API_KEY`: Your OpenAI API key (required)
 - `JWT_SECRET`: Secret key for JWT tokens (required)
-- `COMETCHAT_APP_ID`: CometChat App ID (optional)
-- `COMETCHAT_API_KEY`: CometChat API Key (optional)
-- `COMETCHAT_REGION`: CometChat Region (optional)
 
 ## Contributing
 
