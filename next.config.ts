@@ -4,11 +4,13 @@ import type { NextConfig } from 'next'
 /** @type {import('next').NextConfig} */
 const nextConfig: NextConfig = {
   webpack: (config: Configuration) => {
-    config.resolve!.alias = {
-      ...config.resolve?.alias,
-      '@': '.',
-      '@/components': './components',
-      '@/lib': './lib'
+    if (config.resolve) {
+      config.resolve.alias = {
+        ...config.resolve.alias,
+        '@': '.',
+        '@/components': './components',
+        '@/lib': './lib'
+      }
     }
     return config
   }
