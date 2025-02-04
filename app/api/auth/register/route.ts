@@ -62,7 +62,7 @@ export async function POST(request: Request) {
       console.log('User created successfully:', user.id)
 
       // Remove password from response
-      const { password: _password, ...userWithoutPassword } = user
+      const { password, ...userWithoutPassword } = user
 
       return NextResponse.json(userWithoutPassword)
     } catch (dbError) {

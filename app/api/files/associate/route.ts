@@ -16,11 +16,6 @@ interface FileWithBotDetails extends File {
   }>
 }
 
-interface JWTPayload {
-  id: string
-  userId: string
-}
-
 export async function POST(request: Request) {
   try {
     // Get user from token

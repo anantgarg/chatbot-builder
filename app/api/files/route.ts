@@ -4,11 +4,6 @@ import { verifyJWT } from '@/lib/jwt'
 import { prisma } from '@/lib/prisma'
 import OpenAI, { APIError } from 'openai'
 
-interface DatabaseError extends Error {
-  code?: string
-  meta?: unknown
-}
-
 const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
 })

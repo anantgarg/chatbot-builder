@@ -7,7 +7,7 @@ export const dynamic = 'force-dynamic'
 
 interface EntityInfo {
   entity: {
-    [key: string]: any
+    [key: string]: unknown
   }
   entityType: string
 }
