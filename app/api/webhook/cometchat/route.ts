@@ -1,9 +1,12 @@
 import { NextResponse } from 'next/server'
 
+interface Entity {
+  name: string
+  [key: string]: unknown
+}
+
 interface EntityInfo {
-  entity: {
-    [key: string]: any
-  }
+  entity: Entity
   entityType: string
 }
 

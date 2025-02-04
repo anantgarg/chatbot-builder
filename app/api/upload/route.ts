@@ -2,7 +2,12 @@ import { NextResponse } from 'next/server'
 import { cookies } from 'next/headers'
 import { verifyJWT } from '@/lib/jwt'
 import { prisma } from '@/lib/prisma'
-import OpenAI from 'openai'
+import OpenAI, { APIError } from 'openai'
+
+interface DatabaseError extends Error {
+  code?: string
+  meta?: unknown
+}
 
 const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
@@ -57,20 +62,20 @@ export async function POST(request: Request) {
         message: 'File uploaded successfully', 
         file: fileRecord 
       })
-    } catch (dbError: any) {
+    } catch (dbError: unknown) {
       console.error('Database error:', dbError)
       // Even if database storage fails, the file was uploaded to OpenAI
       return NextResponse.json({ 
         success: true, 
         warning: 'File uploaded to OpenAI but database storage failed',
-        error: dbError.message,
+        error: dbError instanceof Error ? dbError.message : 'Unknown error',
         fileId: response.id
       })
     }
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('File upload error:', error)
     return NextResponse.json({ 
-      error: 'Failed to upload file: ' + (error?.message || 'Unknown error') 
+      error: 'Failed to upload file: ' + (error instanceof Error ? error.message : 'Unknown error')
     }, { status: 500 })
   }
 } 

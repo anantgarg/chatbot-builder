@@ -3,6 +3,23 @@ import { cookies } from 'next/headers'
 import { verifyJWT } from '@/lib/jwt'
 import { prisma } from '@/lib/prisma'
 import { openai } from '@/lib/openai'
+import { APIError } from 'openai'
+import { File, Bot, FileToBot } from '@prisma/client'
+
+interface FileWithBots extends File {
+  bots: FileToBot[]
+}
+
+interface FileWithBotDetails extends File {
+  bots: Array<{
+    bot: Bot
+  }>
+}
+
+interface JWTPayload {
+  id: string
+  userId: string
+}
 
 export async function POST(request: Request) {
   try {
@@ -13,13 +30,13 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
     const payload = await verifyJWT(token)
-    if (!payload) {
+    if (!payload || !payload.userId) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
     // Get request body
     const body = await request.json()
-    const { fileId, botIds } = body
+    const { fileId, botIds } = body as { fileId: string; botIds: string[] }
 
     if (!fileId || !botIds || !Array.isArray(botIds)) {
       return NextResponse.json({ error: 'Missing required fields' }, { status: 400 })
@@ -29,12 +46,12 @@ export async function POST(request: Request) {
     const file = await prisma.file.findUnique({
       where: {
         fileId,
-        userId: payload.id
+        userId: payload.userId
       },
       include: {
         bots: true
       }
-    })
+    }) as FileWithBots | null
 
     if (!file) {
       return NextResponse.json({ error: 'File not found' }, { status: 404 })
@@ -47,9 +64,9 @@ export async function POST(request: Request) {
     const bots = await prisma.bot.findMany({
       where: {
         id: {
-          in: botIds
+          in: botIds.map(id => id.toString())
         },
-        userId: payload.id
+        userId: payload.userId
       }
     })
 
@@ -72,9 +89,9 @@ export async function POST(request: Request) {
               await openai.beta.vectorStores.files.create(bot.vectorStoreId!, {
                 file_id: fileId
               })
-            } catch (error: any) {
+            } catch (error: unknown) {
               // If error is not about duplicate file, rethrow
-              if (!error.message?.includes('already exists')) {
+              if (error instanceof APIError && !error.message?.includes('already exists')) {
                 throw error
               }
             }
@@ -128,7 +145,7 @@ export async function DELETE(request: Request) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
     const payload = await verifyJWT(token)
-    if (!payload) {
+    if (!payload || !payload.userId) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
@@ -144,7 +161,7 @@ export async function DELETE(request: Request) {
     const file = await prisma.file.findUnique({
       where: {
         fileId,
-        userId: payload.id
+        userId: payload.userId
       },
       include: {
         bots: {
@@ -153,7 +170,7 @@ export async function DELETE(request: Request) {
           }
         }
       }
-    })
+    }) as FileWithBotDetails | null
 
     if (!file) {
       return NextResponse.json({ error: 'File not found' }, { status: 404 })
@@ -176,9 +193,9 @@ export async function DELETE(request: Request) {
           // Remove from OpenAI vector store
           try {
             await openai.beta.vectorStores.files.del(bot.vectorStoreId, fileId)
-          } catch (error: any) {
+          } catch (error: unknown) {
             // If error is not about file not found, rethrow
-            if (!error.message?.includes('not found')) {
+            if (error instanceof APIError && !error.message?.includes('not found')) {
               throw error
             }
           }
