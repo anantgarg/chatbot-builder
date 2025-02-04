@@ -4,9 +4,15 @@ import { verifyJWT } from '@/lib/jwt'
 import { prisma } from '@/lib/prisma'
 import { Prisma } from '@prisma/client'
 
+// Keep the full Context type for POST if needed
 type Context = {
   params: { id: string }
   searchParams: { [key: string]: string | string[] | undefined }
+}
+
+// Define a separate context type for GET that only includes params
+type GetContext = {
+  params: { id: string }
 }
 
 export async function POST(
@@ -74,7 +80,7 @@ export async function POST(
 
 export async function GET(
   request: NextRequest,
-  context: Context
+  context: GetContext
 ) {
   try {
     const cookieStore = await cookies()
