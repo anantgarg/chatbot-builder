@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
 
 interface Bot {
@@ -21,11 +21,7 @@ export default function TestPage() {
   const [error, setError] = useState<string | null>(null)
   const [threadId, setThreadId] = useState('default')
 
-  useEffect(() => {
-    fetchBots()
-  }, [])
-
-  const fetchBots = async () => {
+  const fetchBots = useCallback(async () => {
     try {
       const response = await fetch('/api/bots')
       if (!response.ok) {
@@ -41,7 +37,11 @@ export default function TestPage() {
       console.error('Error fetching bots:', err)
       setError(err instanceof Error ? err.message : 'Failed to fetch bots')
     }
-  }
+  }, [router])
+
+  useEffect(() => {
+    fetchBots()
+  }, [fetchBots])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()

@@ -2,13 +2,12 @@ import { NextResponse } from 'next/server'
 import { cookies } from 'next/headers'
 import { verifyJWT } from '@/lib/jwt'
 import { prisma } from '@/lib/prisma'
-import { openai } from '@/lib/openai'
 import { createVectorStore } from '@/lib/vectorStore'
 import { createAssistant } from '@/lib/openai'
 
-export async function GET(request: Request) {
+export async function GET() {
   try {
-    const cookieStore = cookies()
+    const cookieStore = await cookies()
     const token = cookieStore.get('token')?.value
     if (!token) {
       return NextResponse.json(
@@ -46,7 +45,7 @@ export async function GET(request: Request) {
 
 export async function POST(request: Request) {
   try {
-    const cookieStore = cookies()
+    const cookieStore = await cookies()
     const token = cookieStore.get('token')?.value
     if (!token) {
       return NextResponse.json(
@@ -75,7 +74,7 @@ export async function POST(request: Request) {
     const assistantId = await createAssistant(
       data.name,
       data.instruction,
-      vectorStoreId.id
+      vectorStoreId
     )
     console.log('Assistant created:', assistantId)
 
@@ -86,7 +85,7 @@ export async function POST(request: Request) {
         instruction: data.instruction,
         userId: payload.userId,
         assistantId: assistantId,
-        vectorStoreId: vectorStoreId.id,
+        vectorStoreId: vectorStoreId,
         cometChatEnabled: false,
         cometChatAppId: null,
         cometChatRegion: null,

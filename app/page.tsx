@@ -3,8 +3,19 @@
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import { Bot } from '@prisma/client'
-import { PlusIcon } from '@heroicons/react/24/outline'
 import BotModal from '@/components/BotModal'
+
+interface BotInput {
+  name: string
+  instruction: string
+  assistantId: string | null
+  vectorStoreId: string | null
+  cometChatEnabled: boolean
+  cometChatAppId: string | null
+  cometChatRegion: string | null
+  cometChatApiKey: string | null
+  cometChatBotUid: string | null
+}
 
 export default function Dashboard() {
   const [bots, setBots] = useState<Bot[]>([])
@@ -31,24 +42,14 @@ export default function Dashboard() {
     }
   }
 
-  const addBot = async (bot: Omit<Bot, 'id' | 'createdAt'>) => {
+  const addBot = async (bot: BotInput) => {
     try {
       const response = await fetch('/api/bots', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'
         },
-        body: JSON.stringify({
-          name: bot.name,
-          instruction: bot.instruction,
-          assistantId: null,
-          vectorStoreId: null,
-          cometChatEnabled: false,
-          cometChatAppId: null,
-          cometChatRegion: null,
-          cometChatApiKey: null,
-          cometChatBotUid: null
-        })
+        body: JSON.stringify(bot)
       })
       
       if (!response.ok) {
@@ -64,7 +65,7 @@ export default function Dashboard() {
     }
   }
 
-  const updateBot = async (id: string, updates: Partial<Bot>) => {
+  const updateBot = async (id: string, updates: Partial<BotInput>) => {
     try {
       const response = await fetch(`/api/bots/${id}`, {
         method: 'PATCH',
@@ -102,9 +103,9 @@ export default function Dashboard() {
       }
 
       setBots(prevBots => prevBots.filter(bot => bot.id !== id))
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Failed to delete bot:', error)
-      alert(error.message || 'Failed to delete bot')
+      alert(error instanceof Error ? error.message : 'Failed to delete bot')
     }
   }
 

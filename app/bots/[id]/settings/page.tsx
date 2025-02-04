@@ -85,7 +85,7 @@ export default function BotSettingsPage() {
       <div className="bg-white shadow rounded-lg p-6 mb-6">
         <h2 className="text-xl font-semibold mb-4">General Settings</h2>
         <p className="text-gray-600 mb-4">
-          Configure your bot's basic settings and behavior
+          Configure your bot&apos;s basic settings and behavior
         </p>
         {/* Add general settings here */}
       </div>
