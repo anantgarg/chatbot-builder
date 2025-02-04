@@ -1,0 +1,65 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model Bot {
+  id                String        @id @default(uuid())
+  name              String
+  instruction       String
+  assistantId       String?
+  vectorStoreId     String?
+  createdAt         DateTime      @default(now())
+  updatedAt         DateTime      @updatedAt
+  userId            String
+  user              User          @relation(fields: [userId], references: [id])
+  files             FileToBot[]
+  // CometChat Integration
+  cometChatEnabled  Boolean       @default(false)
+  cometChatAppId    String?
+  cometChatRegion   String?
+  cometChatApiKey   String?
+  cometChatBotUid   String?
+}
+
+model File {
+  id        String        @id @default(uuid())
+  fileId    String        @unique // OpenAI's file ID
+  filename  String
+  purpose   String
+  bytes     Int
+  createdAt DateTime      @default(now())
+  updatedAt DateTime      @updatedAt
+  userId    String
+  user      User            @relation(fields: [userId], references: [id])
+  bots      FileToBot[]
+}
+
+model FileToBot {
+  id        String   @id @default(uuid())
+  fileId    String
+  botId     String
+  createdAt DateTime @default(now())
+  file      File     @relation(fields: [fileId], references: [id])
+  bot       Bot      @relation(fields: [botId], references: [id])
+
+  @@unique([fileId, botId])
+}
+
+model User {
+  id        String   @id @default(uuid())
+  name      String
+  email     String   @unique
+  password  String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  bots      Bot[]
+  files     File[]
+}
