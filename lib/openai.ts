@@ -1,4 +1,5 @@
 import OpenAI from 'openai'
+import { APIError } from 'openai'
 
 if (!process.env.OPENAI_API_KEY) {
   throw new Error('Missing OPENAI_API_KEY environment variable')
@@ -22,7 +23,7 @@ export async function createAssistant(name: string, instructions: string, vector
       model: 'gpt-4o',
     })
     return response.id
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('OpenAI Assistant Creation Error:', error)
     throw new Error('Failed to create assistant')
   }
@@ -33,7 +34,7 @@ export async function associateFileWithVectorStore(vectorStoreId: string, fileId
     await openai.beta.vectorStores.files.create(vectorStoreId, {
       file_id: fileId,
     })
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('OpenAI Vector Store File Association Error:', error)
     throw new Error('Failed to associate file with vector store')
   }
@@ -56,17 +57,18 @@ export async function invokeBotWithMessage(instruction: string, message: string)
     })
 
     return response.choices[0]?.message?.content || 'No response generated'
-  } catch (error: any) {
-    console.error('OpenAI API Error Details:', {
-      message: error.message,
-      status: error.status,
-      code: error.code,
-      type: error.type,
-      details: error.response?.data || error.response || error,
-    })
-    
-    if (error?.status === 401) {
-      throw new Error('Invalid OpenAI API key. Please check your environment variables.')
+  } catch (error: unknown) {
+    if (error instanceof APIError) {
+      console.error('OpenAI API Error Details:', {
+        message: error.message,
+        status: error.status,
+        code: error.code,
+        type: error.type,
+      })
+      
+      if (error.status === 401) {
+        throw new Error('Invalid OpenAI API key. Please check your environment variables.')
+      }
     }
     throw error
   }

@@ -1,4 +1,4 @@
-import OpenAI from 'openai'
+import OpenAI, { APIError } from 'openai'
 
 const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
@@ -10,9 +10,12 @@ export async function createVectorStore(name: string): Promise<string> {
       name,
     })
     console.log('Vector store creation response:', response)
-    return response
-  } catch (error: any) {
+    return response.id
+  } catch (error: unknown) {
     console.error('OpenAI Vector Store Creation Error:', error)
-    throw new Error('Failed to create vector store: ' + (error?.message || 'Unknown error'))
+    if (error instanceof APIError) {
+      throw new Error(`Failed to create vector store: ${error.message}`)
+    }
+    throw new Error('Failed to create vector store: Unknown error')
   }
 } 

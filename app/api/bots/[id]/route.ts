@@ -3,6 +3,7 @@ import { cookies } from 'next/headers'
 import { verifyJWT } from '@/lib/jwt'
 import { prisma } from '@/lib/prisma'
 import { openai } from '@/lib/openai'
+import { APIError } from 'openai'
 
 export async function PATCH(
   request: Request,
@@ -19,7 +20,7 @@ export async function PATCH(
       },
     })
     return NextResponse.json(bot)
-  } catch (error) {
+  } catch {
     return NextResponse.json({ error: 'Failed to update bot' }, { status: 500 })
   }
 }
@@ -62,9 +63,9 @@ export async function DELETE(
       if (bot.vectorStoreId) {
         await openai.beta.vectorStores.del(bot.vectorStoreId)
       }
-    } catch (error: any) {
+    } catch (error: unknown) {
       // If error is not about not found, rethrow
-      if (!error.message?.includes('not found')) {
+      if (error instanceof APIError && !error.message?.includes('not found')) {
         throw error
       }
     }

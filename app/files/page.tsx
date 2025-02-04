@@ -46,9 +46,9 @@ export default function FilesPage() {
       }
       const data = await response.json()
       setFiles(data)
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error('Error fetching files:', err)
-      setError(err.message || 'Failed to fetch files')
+      setError(err instanceof Error ? err.message : 'Failed to fetch files')
     } finally {
       setIsLoading(false)
     }
@@ -62,8 +62,9 @@ export default function FilesPage() {
       }
       const data = await response.json()
       setBots(data)
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error('Error fetching bots:', err)
+      setError(err instanceof Error ? err.message : 'Failed to fetch bots')
     }
   }
 
@@ -86,9 +87,9 @@ export default function FilesPage() {
 
       // Refresh the file list
       await fetchFiles()
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error('Error uploading file:', err)
-      setError(err.message || 'Failed to upload file')
+      setError(err instanceof Error ? err.message : 'Failed to upload file')
     }
   }
 
@@ -104,9 +105,9 @@ export default function FilesPage() {
       }
       const data = await response.json()
       setSelectedBots(data.associatedBotIds || [])
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error('Error fetching associated bots:', err)
-      setError(err.message || 'Failed to fetch associated bots')
+      setError(err instanceof Error ? err.message : 'Failed to fetch associated bots')
     }
   }
 
@@ -124,7 +125,7 @@ export default function FilesPage() {
       const currentBotIds = data.associatedBotIds || []
 
       // Find bots to remove (ones that were unchecked)
-      const botsToRemove = currentBotIds.filter(id => !selectedBots.includes(id))
+      const botsToRemove = currentBotIds.filter((id: string) => !selectedBots.includes(id))
 
       // If there are bots to remove, call the DELETE endpoint
       if (botsToRemove.length > 0) {
@@ -166,9 +167,9 @@ export default function FilesPage() {
       // Close modal and refresh files
       setAssociatingFile(null)
       await fetchFiles()
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error('Error updating file associations:', err)
-      setError(err.message || 'Failed to update file associations')
+      setError(err instanceof Error ? err.message : 'Failed to update file associations')
     } finally {
       setIsAssociating(false)
     }
@@ -193,9 +194,9 @@ export default function FilesPage() {
 
       // Refresh the file list
       await fetchFiles()
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error('Error removing associations:', err)
-      setError(err.message || 'Failed to remove associations')
+      setError(err instanceof Error ? err.message : 'Failed to remove associations')
     }
   }
 
@@ -221,9 +222,9 @@ export default function FilesPage() {
 
       // Refresh the file list
       await fetchFiles()
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error('Error deleting file:', err)
-      setError(err.message || 'Failed to delete file')
+      setError(err instanceof Error ? err.message : 'Failed to delete file')
     }
   }
 

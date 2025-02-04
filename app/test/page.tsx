@@ -37,9 +37,9 @@ export default function TestPage() {
       }
       const data = await response.json()
       setBots(data)
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error('Error fetching bots:', err)
-      setError(err.message || 'Failed to fetch bots')
+      setError(err instanceof Error ? err.message : 'Failed to fetch bots')
     }
   }
 
@@ -72,9 +72,9 @@ export default function TestPage() {
       const data = await response.json()
       setResponse(data.response)
       setMessage('')
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error('Error getting response:', err)
-      setError(err.message || 'Failed to get response')
+      setError(err instanceof Error ? err.message : 'Failed to get response')
     } finally {
       setIsLoading(false)
     }
