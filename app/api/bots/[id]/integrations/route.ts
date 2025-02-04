@@ -4,9 +4,14 @@ import { verifyJWT } from '@/lib/jwt'
 import { prisma } from '@/lib/prisma'
 import { Prisma } from '@prisma/client'
 
+type Context = {
+  params: { id: string }
+  searchParams: { [key: string]: string | string[] | undefined }
+}
+
 export async function POST(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  context: Context
 ) {
   try {
     const cookieStore = await cookies()
@@ -31,7 +36,7 @@ export async function POST(
     // Verify bot ownership
     const bot = await prisma.bot.findFirst({
       where: {
-        id: params.id,
+        id: context.params.id,
         userId: payload.userId
       }
     })
@@ -46,7 +51,7 @@ export async function POST(
     // Update bot with integration settings
     const updatedBot = await prisma.bot.update({
       where: {
-        id: params.id
+        id: context.params.id
       },
       data: {
         cometChatEnabled: data.cometChatEnabled,
@@ -69,7 +74,7 @@ export async function POST(
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  context: Context
 ) {
   try {
     const cookieStore = await cookies()
@@ -92,7 +97,7 @@ export async function GET(
     // Fetch bot with integration settings
     const bot = await prisma.bot.findFirst({
       where: {
-        id: params.id,
+        id: context.params.id,
         userId: payload.userId
       },
       select: {
