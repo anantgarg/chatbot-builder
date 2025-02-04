@@ -1,18 +1,12 @@
-import { NextResponse } from 'next/server'
+import { NextRequest, NextResponse } from 'next/server'
 import { cookies } from 'next/headers'
 import { verifyJWT } from '@/lib/jwt'
 import { prisma } from '@/lib/prisma'
 import { Prisma } from '@prisma/client'
 
-type RouteContext = {
-  params: {
-    id: string
-  }
-}
-
 export async function POST(
-  request: Request,
-  { params }: RouteContext
+  request: NextRequest,
+  { params }: { params: { id: string } }
 ) {
   try {
     const cookieStore = await cookies()
@@ -74,8 +68,8 @@ export async function POST(
 }
 
 export async function GET(
-  request: Request,
-  { params }: RouteContext
+  request: NextRequest,
+  { params }: { params: { id: string } }
 ) {
   try {
     const cookieStore = await cookies()
