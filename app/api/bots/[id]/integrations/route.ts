@@ -10,11 +10,6 @@ type Context = {
   searchParams: { [key: string]: string | string[] | undefined }
 }
 
-// Define a separate context type for GET that only includes params
-type GetContext = {
-  params: { id: string }
-}
-
 export async function POST(
   request: NextRequest,
   context: Context
@@ -78,9 +73,10 @@ export async function POST(
   }
 }
 
+// Modified GET handler using inline destructuring for the context parameter
 export async function GET(
   request: NextRequest,
-  context: GetContext
+  { params }: { params: { id: string } }
 ) {
   try {
     const cookieStore = await cookies()
@@ -103,7 +99,7 @@ export async function GET(
     // Fetch bot with integration settings
     const bot = await prisma.bot.findFirst({
       where: {
-        id: context.params.id,
+        id: params.id,
         userId: payload.userId
       },
       select: {
@@ -130,4 +126,4 @@ export async function GET(
       { status: 500 }
     )
   }
-} 
+}
