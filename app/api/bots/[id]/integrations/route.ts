@@ -4,15 +4,20 @@ import { verifyJWT } from '@/lib/jwt'
 import { prisma } from '@/lib/prisma'
 import { Prisma } from '@prisma/client'
 
-// Define a context type that includes both params and searchParams
-type Context = {
+// For POST, we don’t need searchParams (or you can adjust as needed)
+type POSTContext = {
   params: { id: string }
-  searchParams: { [key: string]: string | string[] | undefined }
+}
+
+// For GET, Next.js expects searchParams to be a URLSearchParams instance.
+type GETContext = {
+  params: { id: string },
+  searchParams: URLSearchParams,
 }
 
 export async function POST(
   request: NextRequest,
-  context: Context
+  context: POSTContext
 ) {
   try {
     const cookieStore = cookies()
@@ -38,8 +43,8 @@ export async function POST(
     const bot = await prisma.bot.findFirst({
       where: {
         id: context.params.id,
-        userId: payload.userId
-      }
+        userId: payload.userId,
+      },
     })
 
     if (!bot) {
@@ -52,15 +57,15 @@ export async function POST(
     // Update bot with integration settings
     const updatedBot = await prisma.bot.update({
       where: {
-        id: context.params.id
+        id: context.params.id,
       },
       data: {
         cometChatEnabled: data.cometChatEnabled,
         cometChatAppId: data.cometChatAppId,
         cometChatRegion: data.cometChatRegion,
         cometChatApiKey: data.cometChatApiKey,
-        cometChatBotUid: data.cometChatBotUid
-      } as Prisma.BotUpdateInput
+        cometChatBotUid: data.cometChatBotUid,
+      } as Prisma.BotUpdateInput,
     })
 
     return NextResponse.json(updatedBot)
@@ -75,7 +80,7 @@ export async function POST(
 
 export async function GET(
   request: NextRequest,
-  context: Context
+  context: GETContext
 ) {
   try {
     const cookieStore = cookies()
@@ -99,15 +104,15 @@ export async function GET(
     const bot = await prisma.bot.findFirst({
       where: {
         id: context.params.id,
-        userId: payload.userId
+        userId: payload.userId,
       },
       select: {
         cometChatEnabled: true,
         cometChatAppId: true,
         cometChatRegion: true,
         cometChatApiKey: true,
-        cometChatBotUid: true
-      } as Prisma.BotSelect
+        cometChatBotUid: true,
+      } as Prisma.BotSelect,
     })
 
     if (!bot) {
