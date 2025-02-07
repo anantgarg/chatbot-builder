@@ -4,7 +4,7 @@ import { verifyJWT } from '@/lib/jwt'
 import { prisma } from '@/lib/prisma'
 import { Prisma } from '@prisma/client'
 
-// Keep the full Context type for POST if needed
+// Define a context type that includes both params and searchParams
 type Context = {
   params: { id: string }
   searchParams: { [key: string]: string | string[] | undefined }
@@ -15,7 +15,7 @@ export async function POST(
   context: Context
 ) {
   try {
-    const cookieStore = await cookies()
+    const cookieStore = cookies()
     const token = cookieStore.get('token')?.value
     if (!token) {
       return NextResponse.json(
@@ -73,13 +73,12 @@ export async function POST(
   }
 }
 
-// Modified GET handler using inline destructuring for the context parameter
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  context: Context
 ) {
   try {
-    const cookieStore = await cookies()
+    const cookieStore = cookies()
     const token = cookieStore.get('token')?.value
     if (!token) {
       return NextResponse.json(
@@ -99,7 +98,7 @@ export async function GET(
     // Fetch bot with integration settings
     const bot = await prisma.bot.findFirst({
       where: {
-        id: params.id,
+        id: context.params.id,
         userId: payload.userId
       },
       select: {
