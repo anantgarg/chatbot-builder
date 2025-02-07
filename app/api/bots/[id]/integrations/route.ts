@@ -4,15 +4,9 @@ import { verifyJWT } from '@/lib/jwt'
 import { prisma } from '@/lib/prisma'
 import { Prisma } from '@prisma/client'
 
-// For POST, we don’t need searchParams (or you can adjust as needed)
+// Define a context type for the POST handler (doesn't require searchParams)
 type POSTContext = {
   params: { id: string }
-}
-
-// For GET, Next.js expects searchParams to be a URLSearchParams instance.
-type GETContext = {
-  params: { id: string },
-  searchParams: URLSearchParams,
 }
 
 export async function POST(
@@ -80,7 +74,7 @@ export async function POST(
 
 export async function GET(
   request: NextRequest,
-  context: GETContext
+  { params, searchParams }: { params: { id: string }, searchParams: URLSearchParams }
 ) {
   try {
     const cookieStore = cookies()
@@ -103,7 +97,7 @@ export async function GET(
     // Fetch bot with integration settings
     const bot = await prisma.bot.findFirst({
       where: {
-        id: context.params.id,
+        id: params.id,
         userId: payload.userId,
       },
       select: {
