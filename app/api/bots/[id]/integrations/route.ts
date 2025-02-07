@@ -71,7 +71,7 @@ export async function POST(
 // -- GET Handler -------------------------------------------------
 export async function GET(
   request: NextRequest,
-  { params, searchParams: _searchParams }: { params: { id: string }; searchParams: URLSearchParams }
+  { params }: { params: { id: string } }
 ) {
   try {
     const cookieStore = cookies()
@@ -90,9 +90,6 @@ export async function GET(
         { status: 401 }
       )
     }
-
-    // You can now reference `_searchParams` if needed, e.g.:
-    // const foo = _searchParams.get('foo');
 
     // Fetch bot with integration settings
     const bot = await prisma.bot.findFirst({
