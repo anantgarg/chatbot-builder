@@ -7,7 +7,7 @@ import { Prisma } from '@prisma/client'
 // -- POST Handler ------------------------------------------------
 export async function POST(
   request: NextRequest,
-  { params }: { params: { id: string } }  // Only destructure 'params'
+  { params }: { params: { id: string } }
 ) {
   try {
     const cookieStore = cookies()
@@ -71,7 +71,7 @@ export async function POST(
 // -- GET Handler -------------------------------------------------
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } } // Only destructure 'params'
+  { params, searchParams: _searchParams }: { params: { id: string }; searchParams: URLSearchParams }
 ) {
   try {
     const cookieStore = cookies()
@@ -91,9 +91,8 @@ export async function GET(
       )
     }
 
-    // If you need search parameters, read them from `request.nextUrl.searchParams`
-    const searchParams = request.nextUrl.searchParams
-    // e.g. const something = searchParams.get('something')
+    // You can now reference `_searchParams` if needed, e.g.:
+    // const foo = _searchParams.get('foo');
 
     // Fetch bot with integration settings
     const bot = await prisma.bot.findFirst({
