@@ -4,14 +4,10 @@ import { verifyJWT } from '@/lib/jwt'
 import { prisma } from '@/lib/prisma'
 import { Prisma } from '@prisma/client'
 
-// Define a context type for the POST handler (doesn't require searchParams)
-type POSTContext = {
-  params: { id: string }
-}
-
+// -- POST Handler ------------------------------------------------
 export async function POST(
   request: NextRequest,
-  context: POSTContext
+  { params }: { params: { id: string } }  // Only destructure 'params'
 ) {
   try {
     const cookieStore = cookies()
@@ -36,7 +32,7 @@ export async function POST(
     // Verify bot ownership
     const bot = await prisma.bot.findFirst({
       where: {
-        id: context.params.id,
+        id: params.id,
         userId: payload.userId,
       },
     })
@@ -51,7 +47,7 @@ export async function POST(
     // Update bot with integration settings
     const updatedBot = await prisma.bot.update({
       where: {
-        id: context.params.id,
+        id: params.id,
       },
       data: {
         cometChatEnabled: data.cometChatEnabled,
@@ -72,9 +68,10 @@ export async function POST(
   }
 }
 
+// -- GET Handler -------------------------------------------------
 export async function GET(
   request: NextRequest,
-  { params, searchParams }: { params: { id: string }, searchParams: URLSearchParams }
+  { params }: { params: { id: string } } // Only destructure 'params'
 ) {
   try {
     const cookieStore = cookies()
@@ -93,6 +90,10 @@ export async function GET(
         { status: 401 }
       )
     }
+
+    // If you need search parameters, read them from `request.nextUrl.searchParams`
+    const searchParams = request.nextUrl.searchParams
+    // e.g. const something = searchParams.get('something')
 
     // Fetch bot with integration settings
     const bot = await prisma.bot.findFirst({
