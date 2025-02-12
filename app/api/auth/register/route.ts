@@ -22,6 +22,7 @@ export async function POST(request: Request) {
 
     console.log('Parsed request body:', body)
 
+    // Extract and validate required fields
     const { name, email, password } = body
 
     // Validate input
@@ -61,8 +62,8 @@ export async function POST(request: Request) {
 
       console.log('User created successfully:', user.id)
 
-      // Remove password from response
-      const { password, ...userWithoutPassword } = user
+      // Remove password from response using a different variable name
+      const { password: _password, ...userWithoutPassword } = user
 
       return NextResponse.json(userWithoutPassword)
     } catch (dbError) {
