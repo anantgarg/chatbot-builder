@@ -161,7 +161,7 @@ export async function POST(
     const assistantResponse = lastMessage.content[0].text.value
 
     // Send the assistant's response back through CometChat
-    const url = `https://${bot.cometChatAppId}.api-${bot.cometChatRegion}.cometchat.io/v3/bots/${bot.cometChatBotUid}/messages`
+    const url = `https://${bot.cometChatAppId!}.api-${bot.cometChatRegion!}.cometchat.io/v3/bots/${bot.cometChatBotUid!}/messages`
 
     const body = {
       category: 'message',
@@ -176,7 +176,7 @@ export async function POST(
       headers: {
         'accept': 'application/json',
         'content-type': 'application/json',
-        'apikey': bot.cometChatApiKey
+        'apikey': bot.cometChatApiKey!
       },
       body: JSON.stringify(body)
     })
