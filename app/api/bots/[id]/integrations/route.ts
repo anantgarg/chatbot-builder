@@ -10,7 +10,7 @@ export async function POST(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const cookieStore = cookies()
+    const cookieStore = await cookies()
     const token = cookieStore.get('token')?.value
     if (!token) {
       return NextResponse.json(
@@ -28,11 +28,12 @@ export async function POST(
     }
 
     const data = await request.json()
+    const { id } = await params
 
     // Verify bot ownership
     const bot = await prisma.bot.findFirst({
       where: {
-        id: params.id,
+        id,
         userId: payload.userId,
       },
     })
@@ -47,7 +48,7 @@ export async function POST(
     // Update bot with integration settings
     const updatedBot = await prisma.bot.update({
       where: {
-        id: params.id,
+        id,
       },
       data: {
         cometChatEnabled: data.cometChatEnabled,
@@ -71,10 +72,10 @@ export async function POST(
 // -- GET Handler -------------------------------------------------
 export async function GET(
   request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }  // Remove searchParams from here
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const cookieStore = cookies()
+    const cookieStore = await cookies()
     const token = cookieStore.get('token')?.value
     if (!token) {
       return NextResponse.json(
@@ -91,16 +92,12 @@ export async function GET(
       )
     }
 
-    // *Use* the searchParams so it's not flagged as unused:
-    console.log('[GET Handler] Search Params:', searchParams.toString())
-    // Alternatively, you could do: 
-    // const foo = searchParams.get('foo')
-    // if (foo) { /* use foo in a query, etc. */ }
+    const { id } = await params
 
     // Fetch bot with integration settings
     const bot = await prisma.bot.findFirst({
       where: {
-        id: params.id,
+        id,
         userId: payload.userId,
       },
       select: {
