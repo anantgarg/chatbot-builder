@@ -71,7 +71,7 @@ export async function POST(
 // -- GET Handler -------------------------------------------------
 export async function GET(
   request: NextRequest,
-  { params, searchParams }: { params: { id: string }; searchParams: URLSearchParams }
+  { params }: { params: { id: string } }  // Remove searchParams from here
 ) {
   try {
     const cookieStore = cookies()
