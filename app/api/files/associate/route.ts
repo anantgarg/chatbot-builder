@@ -6,15 +6,13 @@ import { openai } from '@/lib/openai'
 import { APIError } from 'openai'
 import type { Prisma } from '@prisma/client'
 
-interface FileWithBots extends Prisma.FileGetPayload<{
+type FileWithBots = Prisma.FileGetPayload<{
   include: { bots: true }
-}> {
-}
+}>
 
-interface FileWithBotDetails extends Prisma.FileGetPayload<{
+type FileWithBotDetails = Prisma.FileGetPayload<{
   include: { bots: { include: { bot: true } } }
-}> {
-}
+}>
 
 export async function POST(request: Request) {
   try {
