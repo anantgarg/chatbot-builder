@@ -4,16 +4,16 @@ import { verifyJWT } from '@/lib/jwt'
 import { prisma } from '@/lib/prisma'
 import { openai } from '@/lib/openai'
 import { APIError } from 'openai'
-import { File, Bot, FileToBot } from '@prisma/client'
+import type { Prisma } from '@prisma/client'
 
-interface FileWithBots extends File {
-  bots: FileToBot[]
+interface FileWithBots extends Prisma.FileGetPayload<{
+  include: { bots: true }
+}> {
 }
 
-interface FileWithBotDetails extends File {
-  bots: Array<{
-    bot: Bot
-  }>
+interface FileWithBotDetails extends Prisma.FileGetPayload<{
+  include: { bots: { include: { bot: true } } }
+}> {
 }
 
 export async function POST(request: Request) {
