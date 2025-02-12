@@ -56,7 +56,7 @@ export async function POST(
         cometChatRegion: data.cometChatRegion,
         cometChatApiKey: data.cometChatApiKey,
         cometChatBotUid: data.cometChatBotUid,
-      } as Prisma.BotUpdateInput,
+      },
     })
 
     return NextResponse.json(updatedBot)
@@ -106,7 +106,7 @@ export async function GET(
         cometChatRegion: true,
         cometChatApiKey: true,
         cometChatBotUid: true,
-      } as Prisma.BotSelect,
+      },
     })
 
     if (!bot) {
