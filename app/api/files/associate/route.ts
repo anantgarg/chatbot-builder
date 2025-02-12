@@ -4,7 +4,7 @@ import { verifyJWT } from '@/lib/jwt'
 import { prisma } from '@/lib/prisma'
 import { openai } from '@/lib/openai'
 import { APIError } from 'openai'
-import type { Prisma, File, Bot, FileToBot } from '@prisma/client'
+import type { File, Bot, FileToBot } from '@prisma/client'
 
 interface FileWithBots extends File {
   bots: FileToBot[];
