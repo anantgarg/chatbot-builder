@@ -63,7 +63,9 @@ export async function POST(request: Request) {
       console.log('User created successfully:', user.id)
 
       // Remove password from response using a different variable name
-      const { password: _password, ...userWithoutPassword } = user
+      // Destructure password with _ prefix to indicate intentional non-use
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
+      const { password: _, ...userWithoutPassword } = user
 
       return NextResponse.json(userWithoutPassword)
     } catch (dbError) {
