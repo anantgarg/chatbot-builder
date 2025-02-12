@@ -7,10 +7,10 @@ import { APIError } from 'openai'
 
 export async function PATCH(
   request: Request,
-  context: { params: { id: string } }
+  context: { params: Promise<{ id: string }> }
 ) {
   try {
-    const id = await context.params.id
+    const { id } = await context.params
     const json = await request.json()
     const bot = await prisma.bot.update({
       where: { id },
@@ -27,7 +27,7 @@ export async function PATCH(
 
 export async function DELETE(
   request: Request,
-  { params }: { params: { id: string } }
+  context: { params: Promise<{ id: string }> }
 ) {
   try {
     const cookieStore = await cookies()
@@ -40,10 +40,12 @@ export async function DELETE(
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
+    const { id } = await context.params
+
     // Get bot and verify ownership
     const bot = await prisma.bot.findUnique({
       where: {
-        id: params.id,
+        id,
         userId: payload.userId
       }
     })

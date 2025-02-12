@@ -51,10 +51,10 @@ interface WebhookPayload {
 
 export async function POST(
   request: Request,
-  { params }: { params: { botId: string } }
+  context: { params: Promise<{ botId: string }> }
 ) {
   try {
-    const botId = params.botId
+    const { botId } = await context.params;
     const payload: WebhookPayload = await request.json()
     
     console.log('Received webhook for bot:', botId)
