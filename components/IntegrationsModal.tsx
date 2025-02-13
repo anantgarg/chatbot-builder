@@ -5,6 +5,7 @@ interface IntegrationsModalProps {
   onClose: () => void
   onSubmit: (data: IntegrationData) => Promise<void>
   initialData?: IntegrationData
+  botId: string
 }
 
 interface IntegrationData {
@@ -19,7 +20,8 @@ export default function IntegrationsModal({
   isOpen,
   onClose,
   onSubmit,
-  initialData
+  initialData,
+  botId
 }: IntegrationsModalProps) {
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [formData, setFormData] = useState<IntegrationData>(initialData || {
