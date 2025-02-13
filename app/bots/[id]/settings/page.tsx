@@ -190,7 +190,6 @@ export default function BotSettingsPage() {
         onClose={() => setIsIntegrationsModalOpen(false)}
         onSubmit={handleIntegrationsSubmit}
         initialData={integrationData}
-        botId={botId}
       />
     </div>
   )
