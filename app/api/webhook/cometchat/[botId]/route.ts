@@ -91,6 +91,13 @@ export async function POST(
       return NextResponse.json({ error: 'Bot not found' }, { status: 404 })
     }
 
+    if (!bot.assistantId) {
+      return NextResponse.json(
+        { error: 'Bot is not properly configured - missing OpenAI assistant ID' },
+        { status: 400 }
+      )
+    }
+
     const missingConfigs = []
     if (!bot.cometChatAppId) missingConfigs.push('cometChatAppId')
     if (!bot.cometChatApiKey) missingConfigs.push('cometChatApiKey')
