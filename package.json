@@ -7,7 +7,10 @@
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
-    "postinstall": "prisma generate"
+    "dev:migrate": "prisma migrate dev --schema=./prisma/schema.dev.prisma",
+    "dev:generate": "prisma generate --schema=./prisma/schema.dev.prisma",
+    "migrate": "prisma migrate deploy",
+    "generate": "prisma generate"
   },
   "dependencies": {
     "@headlessui/react": "^2.2.0",

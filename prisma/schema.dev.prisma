@@ -1,0 +1,29 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model Bot {
+  id                String        @id @default(uuid())
+  name              String
+  instruction       String
+  assistantId       String?
+  vectorStoreId     String?
+  createdAt         DateTime      @default(now())
+  updatedAt         DateTime      @updatedAt
+  userId            String
+  user              User          @relation(fields: [userId], references: [id])
+  files             FileToBot[]
+  // CometChat Integration
+  cometChatEnabled  Boolean       @default(false)
+  cometChatAppId    String?
+  cometChatRegion   String?
+  cometChatApiKey   String?
+  cometChatBotUid   String?
+}
+
+// ... existing code ... 
