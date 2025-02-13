@@ -4,17 +4,27 @@ import { Fragment, useEffect, useState } from 'react'
 import { Dialog, Transition } from '@headlessui/react'
 import { XMarkIcon } from '@heroicons/react/24/outline'
 
-interface Bot {
-  id: string
+interface BotInput {
   name: string
   instruction: string
+  assistantId: string | null
+  vectorStoreId: string | null
+  cometChatEnabled: boolean
+  cometChatAppId: string | null
+  cometChatRegion: string | null
+  cometChatApiKey: string | null
+  cometChatBotUid: string | null
+}
+
+interface Bot extends BotInput {
+  id: string
   createdAt: string
 }
 
 interface BotModalProps {
   isOpen: boolean
   onClose: () => void
-  onSubmit: (bot: Omit<Bot, 'id' | 'createdAt'>) => void
+  onSubmit: (bot: BotInput) => void | Promise<void>
   initialBot?: Bot
 }
 
@@ -34,7 +44,17 @@ export default function BotModal({ isOpen, onClose, onSubmit, initialBot }: BotM
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
-    onSubmit({ name, instruction })
+    onSubmit({
+      name,
+      instruction,
+      assistantId: null,
+      vectorStoreId: null,
+      cometChatEnabled: false,
+      cometChatAppId: null,
+      cometChatRegion: null,
+      cometChatApiKey: null,
+      cometChatBotUid: null
+    })
     onClose()
   }
 
