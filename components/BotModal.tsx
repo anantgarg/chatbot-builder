@@ -18,7 +18,9 @@ interface BotInput {
 
 interface Bot extends BotInput {
   id: string
-  createdAt: string
+  userId: string
+  createdAt: Date
+  updatedAt: Date
 }
 
 interface BotModalProps {
