@@ -73,6 +73,13 @@ A platform for creating and managing AI-powered chatbots with OpenAI integration
 - `DATABASE_URL`: SQLite database path (default: "./prisma/dev.db")
 - `OPENAI_API_KEY`: Your OpenAI API key (required)
 - `JWT_SECRET`: Secret key for JWT tokens (required)
+- `OPENAI_USE_DUMMY_KEY`: Set to "true" during build time to use dummy API keys (default: "false")
+
+## Build Configuration
+
+When deploying to production or running builds, you should set `OPENAI_USE_DUMMY_KEY="true"` to prevent build errors related to missing API keys. This environment variable is automatically set in the Vercel configuration for builds.
+
+During normal runtime operation, the application will use the API keys provided by users in their settings.
 
 ## Contributing
 

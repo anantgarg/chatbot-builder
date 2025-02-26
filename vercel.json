@@ -2,5 +2,10 @@
   "version": 2,
   "buildCommand": "npm run build",
   "installCommand": "npm install",
-  "framework": "nextjs"
+  "framework": "nextjs",
+  "build": {
+    "env": {
+      "OPENAI_USE_DUMMY_KEY": "true"
+    }
+  }
 } 
