@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server'
 import { cookies } from 'next/headers'
 import { verifyJWT } from '@/lib/jwt'
 import { prisma } from '@/lib/prisma'
-import { getOpenAIClientForUser, associateFileWithVectorStore, disassociateFileFromVectorStore } from '@/lib/openai'
+import { associateFileWithVectorStore, disassociateFileFromVectorStore } from '@/lib/openai'
 import { APIError } from 'openai'
 import type { File, Bot, FileToBot } from '@prisma/client'
 
