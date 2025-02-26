@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server'
 import { cookies } from 'next/headers'
 import { verifyJWT } from '@/lib/jwt'
 import { prisma } from '@/lib/prisma'
-import { openai } from '@/lib/openai'
+import { getOpenAIClientForUser } from '@/lib/openai'
 import { APIError } from 'openai'
 import type { File, Bot, FileToBot } from '@prisma/client'
 
@@ -92,7 +92,10 @@ export async function POST(request: Request) {
           // Skip OpenAI association if already exists
           if (!existingBotIds.includes(bot.id)) {
             try {
-              await openai.beta.vectorStores.files.create(bot.vectorStoreId!, {
+              // Get the OpenAI client for the user
+              const client = await getOpenAIClientForUser(payload.userId as string)
+              
+              await client.beta.vectorStores.files.create(bot.vectorStoreId!, {
                 file_id: fileId
               })
             } catch (error: unknown) {
@@ -208,7 +211,10 @@ export async function DELETE(request: Request) {
         try {
           // Remove from OpenAI vector store
           try {
-            await openai.beta.vectorStores.files.del(bot.vectorStoreId, fileId)
+            // Get the OpenAI client for the user
+            const client = await getOpenAIClientForUser(payload.userId as string)
+            
+            await client.beta.vectorStores.files.del(bot.vectorStoreId, fileId)
           } catch (error: unknown) {
             // If error is not about file not found, rethrow
             if (error instanceof APIError && !error.message?.includes('not found')) {

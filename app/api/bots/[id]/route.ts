@@ -2,8 +2,11 @@ import { NextResponse } from 'next/server'
 import { cookies } from 'next/headers'
 import { verifyJWT } from '@/lib/jwt'
 import { prisma } from '@/lib/prisma'
-import { openai } from '@/lib/openai'
+import { getOpenAIClientForUser } from '@/lib/openai'
 import { APIError } from 'openai'
+
+// Check if we're in a build/SSR context
+const isBuildOrSSR = typeof window === 'undefined' && process.env.NODE_ENV === 'production'
 
 export async function PATCH(
   request: Request,
@@ -30,6 +33,12 @@ export async function DELETE(
   context: { params: Promise<{ id: string }> }
 ) {
   try {
+    // Skip actual API calls during build process
+    if (isBuildOrSSR && !process.env.OPENAI_API_KEY) {
+      console.log('Build process detected, skipping actual OpenAI API call')
+      return NextResponse.json({ success: true })
+    }
+    
     const cookieStore = await cookies()
     const token = cookieStore.get('token')?.value
     if (!token) {
@@ -56,14 +65,17 @@ export async function DELETE(
 
     // Delete from OpenAI
     try {
+      // Get the OpenAI client for the user
+      const client = await getOpenAIClientForUser(payload.userId as string)
+      
       // Delete assistant if exists
       if (bot.assistantId) {
-        await openai.beta.assistants.del(bot.assistantId)
+        await client.beta.assistants.del(bot.assistantId)
       }
 
       // Delete vector store if exists
       if (bot.vectorStoreId) {
-        await openai.beta.vectorStores.del(bot.vectorStoreId)
+        await client.beta.vectorStores.del(bot.vectorStoreId)
       }
     } catch (error: unknown) {
       // If error is not about not found, rethrow

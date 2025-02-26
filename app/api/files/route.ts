@@ -2,16 +2,11 @@ import { NextResponse } from 'next/server'
 import { cookies } from 'next/headers'
 import { verifyJWT } from '@/lib/jwt'
 import { prisma } from '@/lib/prisma'
-import OpenAI, { APIError } from 'openai'
+import { getOpenAIClientForUser } from '@/lib/openai'
+import { APIError } from 'openai'
 
 // Check if we're in a build/SSR context
 const isBuildOrSSR = typeof window === 'undefined' && process.env.NODE_ENV === 'production'
-
-const openai = new OpenAI({
-  apiKey: isBuildOrSSR && !process.env.OPENAI_API_KEY 
-    ? 'dummy-key-for-build-process'
-    : process.env.OPENAI_API_KEY,
-})
 
 export async function GET() {
   try {
@@ -100,8 +95,11 @@ export async function POST(request: Request) {
 
     console.log('Uploading file to OpenAI:', file.name)
 
+    // Get the OpenAI client for the user
+    const client = await getOpenAIClientForUser(payload.userId as string)
+
     // Upload the file to OpenAI
-    const response = await openai.files.create({
+    const response = await client.files.create({
       file,
       purpose: 'assistants',
     })
@@ -195,7 +193,10 @@ export async function DELETE(request: Request) {
 
     // Delete from OpenAI
     try {
-      await openai.files.del(fileId)
+      // Get the OpenAI client for the user
+      const client = await getOpenAIClientForUser(payload.userId as string)
+      
+      await client.files.del(fileId)
     } catch (error: unknown) {
       // If error is not about file not found, rethrow
       if (error instanceof APIError && !error.message?.includes('not found')) {

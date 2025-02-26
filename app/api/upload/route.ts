@@ -2,16 +2,10 @@ import { NextResponse } from 'next/server'
 import { cookies } from 'next/headers'
 import { verifyJWT } from '@/lib/jwt'
 import { prisma } from '@/lib/prisma'
-import OpenAI from 'openai'
+import { getOpenAIClientForUser } from '@/lib/openai'
 
 // Check if we're in a build/SSR context
 const isBuildOrSSR = typeof window === 'undefined' && process.env.NODE_ENV === 'production'
-
-const openai = new OpenAI({
-  apiKey: isBuildOrSSR && !process.env.OPENAI_API_KEY 
-    ? 'dummy-key-for-build-process'
-    : process.env.OPENAI_API_KEY,
-})
 
 export async function POST(request: Request) {
   try {
@@ -45,8 +39,11 @@ export async function POST(request: Request) {
 
     console.log('Uploading file to OpenAI:', file.name)
 
+    // Get the OpenAI client for the user
+    const client = await getOpenAIClientForUser(payload.userId as string)
+
     // Upload the file to OpenAI
-    const response = await openai.files.create({
+    const response = await client.files.create({
       file,
       purpose: 'assistants',
     })
