@@ -145,7 +145,7 @@ export async function POST(
       console.log('Attempting to retrieve existing thread...')
       thread = await client.beta.threads.retrieve(payload.data.conversationId)
       console.log('Retrieved existing thread:', thread.id)
-    } catch (threadError) {
+    } catch (_) {
       // Create new thread if it doesn't exist
       console.log('Thread not found, creating new thread...')
       thread = await client.beta.threads.create()
