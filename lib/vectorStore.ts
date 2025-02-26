@@ -1,22 +1,14 @@
 import { APIError } from 'openai'
 import { getOpenAIClientForUser } from './openai'
 
-// More specific check for build time vs regular SSR
-// Various Vercel environment variables that should be present during normal operation
-// but not during build time
-const hasVercelEnv = process.env.VERCEL_ENV !== undefined
-const hasVercelRegion = process.env.VERCEL_REGION !== undefined
-const hasVercelUrl = process.env.VERCEL_URL !== undefined
-
-// Only true during build time, not during normal server operation 
-const isBuildTime = typeof window === 'undefined' && 
-                   process.env.NODE_ENV === 'production' && 
-                   !hasVercelEnv && !hasVercelRegion && !hasVercelUrl
+// Use a dedicated environment variable to control when to use dummy keys
+// Set OPENAI_USE_DUMMY_KEY=true during build if needed
+const useDummyKey = process.env.OPENAI_USE_DUMMY_KEY === 'true'
 
 export async function createVectorStore(name: string, userId: string): Promise<string> {
-  // Skip actual API calls during build process only (not regular SSR)
-  if (isBuildTime && !process.env.OPENAI_API_KEY) {
-    console.log('Build process detected, skipping actual OpenAI API call')
+  // Skip actual API calls only when explicitly configured to do so
+  if (useDummyKey && !process.env.OPENAI_API_KEY) {
+    console.log('Using dummy key as configured by OPENAI_USE_DUMMY_KEY, returning dummy vector store ID')
     return 'dummy-vector-store-id-for-build'
   }
 

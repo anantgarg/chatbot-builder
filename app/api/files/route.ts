@@ -5,14 +5,14 @@ import { prisma } from '@/lib/prisma'
 import { getOpenAIClientForUser } from '@/lib/openai'
 import { APIError } from 'openai'
 
-// Check if we're in a build/SSR context
-const isBuildOrSSR = typeof window === 'undefined' && process.env.NODE_ENV === 'production'
+// Use a dedicated environment variable to control when to use dummy keys
+const useDummyKey = process.env.OPENAI_USE_DUMMY_KEY === 'true'
 
 export async function GET() {
   try {
-    // Skip actual API calls during build process
-    if (isBuildOrSSR && !process.env.OPENAI_API_KEY) {
-      console.log('Build process detected, skipping actual OpenAI API call')
+    // Skip actual API calls only when explicitly configured to do so
+    if (useDummyKey && !process.env.OPENAI_API_KEY) {
+      console.log('Using dummy key as configured by OPENAI_USE_DUMMY_KEY, returning empty files array')
       return NextResponse.json([])
     }
 
@@ -65,12 +65,12 @@ export async function GET() {
 
 export async function POST(request: Request) {
   try {
-    // Skip actual API calls during build process
-    if (isBuildOrSSR && !process.env.OPENAI_API_KEY) {
-      console.log('Build process detected, skipping actual OpenAI API call')
+    // Skip actual API calls only when explicitly configured to do so
+    if (useDummyKey && !process.env.OPENAI_API_KEY) {
+      console.log('Using dummy key as configured by OPENAI_USE_DUMMY_KEY, returning dummy file data')
       return NextResponse.json({ 
         success: true, 
-        message: 'This is a dummy response for the build process',
+        message: 'This is a dummy response when OPENAI_USE_DUMMY_KEY is enabled',
         file: { id: 'dummy-id', fileId: 'dummy-file-id', filename: 'dummy-file.txt' }
       })
     }
@@ -145,9 +145,9 @@ export async function POST(request: Request) {
 
 export async function DELETE(request: Request) {
   try {
-    // Skip actual API calls during build process
-    if (isBuildOrSSR && !process.env.OPENAI_API_KEY) {
-      console.log('Build process detected, skipping actual OpenAI API call')
+    // Skip actual API calls only when explicitly configured to do so
+    if (useDummyKey && !process.env.OPENAI_API_KEY) {
+      console.log('Using dummy key as configured by OPENAI_USE_DUMMY_KEY, skipping OpenAI API calls')
       return NextResponse.json({ success: true })
     }
 

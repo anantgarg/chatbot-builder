@@ -2,24 +2,14 @@ import OpenAI from 'openai'
 import { APIError } from 'openai'
 import { prisma } from './prisma'
 
-// More specific check for build time vs regular SSR
-// Various Vercel environment variables that should be present during normal operation
-// but not during build time
-const hasVercelEnv = process.env.VERCEL_ENV !== undefined
-const hasVercelRegion = process.env.VERCEL_REGION !== undefined
-const hasVercelUrl = process.env.VERCEL_URL !== undefined
+// Use a dedicated environment variable to control when to use dummy keys
+// Set OPENAI_USE_DUMMY_KEY=true during build if needed
+const useDummyKey = process.env.OPENAI_USE_DUMMY_KEY === 'true'
 
-// Only true during build time, not during normal server operation 
-const isBuildTime = typeof window === 'undefined' && 
-                    process.env.NODE_ENV === 'production' && 
-                    !hasVercelEnv && !hasVercelRegion && !hasVercelUrl
-
-console.log('Environment detection:', {
+console.log('OpenAI client configuration:', {
   nodeEnv: process.env.NODE_ENV,
-  vercelEnv: process.env.VERCEL_ENV,
-  vercelRegion: process.env.VERCEL_REGION ? 'set' : 'not set',
-  vercelUrl: process.env.VERCEL_URL ? 'set' : 'not set',
-  isBuildTime
+  useDummyKey,
+  hasApiKey: !!process.env.OPENAI_API_KEY
 })
 
 if (!process.env.OPENAI_API_KEY) {
@@ -27,18 +17,18 @@ if (!process.env.OPENAI_API_KEY) {
 }
 
 // Default OpenAI client using the environment variable
-// During build, use a dummy API key to prevent errors
+// Use dummy key only when explicitly configured to do so
 export const openai = new OpenAI({
-  apiKey: isBuildTime && !process.env.OPENAI_API_KEY 
+  apiKey: useDummyKey && !process.env.OPENAI_API_KEY 
     ? 'dummy-key-for-build-process'
     : process.env.OPENAI_API_KEY,
 })
 
 // Function to get an OpenAI client with a user's API key
 export async function getOpenAIClientForUser(userId: string): Promise<OpenAI> {
-  // Skip actual API calls during build process only (not regular SSR)
-  if (isBuildTime && !process.env.OPENAI_API_KEY) {
-    console.log('Build process detected, using dummy key for OpenAI client')
+  // Only use dummy key when explicitly configured to do so
+  if (useDummyKey && !process.env.OPENAI_API_KEY) {
+    console.log('Using dummy key for OpenAI client as configured by OPENAI_USE_DUMMY_KEY')
     return new OpenAI({
       apiKey: 'dummy-key-for-build-process'
     })
@@ -47,7 +37,6 @@ export async function getOpenAIClientForUser(userId: string): Promise<OpenAI> {
   try {
     console.log(`Retrieving OpenAI client for user ${userId}`)
     console.log(`Current environment: NODE_ENV=${process.env.NODE_ENV}, VERCEL_ENV=${process.env.VERCEL_ENV || 'not set'}`)
-    console.log(`Is build time detection active: ${isBuildTime}`)
     
     const user = await prisma.user.findUnique({
       where: { id: userId },

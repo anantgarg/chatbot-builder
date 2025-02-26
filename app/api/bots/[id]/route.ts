@@ -5,8 +5,8 @@ import { prisma } from '@/lib/prisma'
 import { getOpenAIClientForUser } from '@/lib/openai'
 import { APIError } from 'openai'
 
-// Check if we're in a build/SSR context
-const isBuildOrSSR = typeof window === 'undefined' && process.env.NODE_ENV === 'production'
+// Use a dedicated environment variable to control when to use dummy keys
+const useDummyKey = process.env.OPENAI_USE_DUMMY_KEY === 'true'
 
 export async function PATCH(
   request: Request,
@@ -33,9 +33,9 @@ export async function DELETE(
   context: { params: Promise<{ id: string }> }
 ) {
   try {
-    // Skip actual API calls during build process
-    if (isBuildOrSSR && !process.env.OPENAI_API_KEY) {
-      console.log('Build process detected, skipping actual OpenAI API call')
+    // Skip actual API calls only when explicitly configured to do so
+    if (useDummyKey && !process.env.OPENAI_API_KEY) {
+      console.log('Using dummy key as configured by OPENAI_USE_DUMMY_KEY, skipping OpenAI API calls')
       return NextResponse.json({ success: true })
     }
     

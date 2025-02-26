@@ -4,15 +4,15 @@ import { verifyJWT } from '@/lib/jwt'
 import { prisma } from '@/lib/prisma'
 import { getOpenAIClientForUser } from '@/lib/openai'
 
-// Check if we're in a build/SSR context
-const isBuildOrSSR = typeof window === 'undefined' && process.env.NODE_ENV === 'production'
+// Use a dedicated environment variable to control when to use dummy keys
+const useDummyKey = process.env.OPENAI_USE_DUMMY_KEY === 'true'
 
 export async function POST(request: Request, context: { params: Promise<{ id: string }> }) {
-  // Skip actual API calls during build process
-  if (isBuildOrSSR && !process.env.OPENAI_API_KEY) {
-    console.log('Build process detected, skipping actual OpenAI API call')
+  // Skip actual API calls only when explicitly configured to do so
+  if (useDummyKey && !process.env.OPENAI_API_KEY) {
+    console.log('Using dummy key as configured by OPENAI_USE_DUMMY_KEY, returning dummy response')
     return NextResponse.json({ 
-      response: 'This is a dummy response for the build process',
+      response: 'This is a dummy response when OPENAI_USE_DUMMY_KEY is enabled',
       threadId: 'dummy-thread-id'
     });
   }
