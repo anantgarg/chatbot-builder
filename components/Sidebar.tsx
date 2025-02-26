@@ -2,7 +2,7 @@
 
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
-import { ComputerDesktopIcon, BeakerIcon, FolderIcon, ArrowLeftOnRectangleIcon } from '@heroicons/react/24/outline'
+import { ComputerDesktopIcon, BeakerIcon, FolderIcon, ArrowLeftOnRectangleIcon, Cog6ToothIcon } from '@heroicons/react/24/outline'
 import Cookies from 'js-cookie'
 
 export default function Sidebar() {
@@ -51,6 +51,14 @@ export default function Sidebar() {
           >
             <FolderIcon className="mr-3 h-6 w-6" />
             Files
+          </Link>
+
+          <Link
+            href="/settings"
+            className="group flex items-center px-2 py-2 text-sm font-medium rounded-md text-gray-600 hover:bg-gray-50 hover:text-gray-900"
+          >
+            <Cog6ToothIcon className="mr-3 h-6 w-6" />
+            Settings
           </Link>
         </nav>
       </div>

@@ -54,12 +54,13 @@ model FileToBot {
 }
 
 model User {
-  id        String   @id @default(uuid())
-  name      String
-  email     String   @unique
-  password  String
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-  bots      Bot[]
-  files     File[]
+  id           String   @id @default(uuid())
+  name         String
+  email        String   @unique
+  password     String
+  openaiApiKey String?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+  bots         Bot[]
+  files        File[]
 }

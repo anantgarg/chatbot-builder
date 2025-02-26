@@ -1,17 +1,50 @@
 import OpenAI from 'openai'
 import { APIError } from 'openai'
+import { prisma } from './prisma'
 
 if (!process.env.OPENAI_API_KEY) {
-  throw new Error('Missing OPENAI_API_KEY environment variable')
+  console.warn('Missing OPENAI_API_KEY environment variable. Will rely on user-provided keys.')
 }
 
+// Default OpenAI client using the environment variable
 export const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
 })
 
-export async function createAssistant(name: string, instructions: string, vectorStoreId: string): Promise<string> {
+// Function to get an OpenAI client with a user's API key
+export async function getOpenAIClientForUser(userId: string): Promise<OpenAI> {
   try {
-    const response = await openai.beta.assistants.create({
+    const user = await prisma.user.findUnique({
+      where: { id: userId },
+      select: { openaiApiKey: true }
+    })
+
+    if (user?.openaiApiKey) {
+      return new OpenAI({
+        apiKey: user.openaiApiKey,
+      })
+    }
+
+    // Fall back to the default client if user doesn't have an API key
+    if (!process.env.OPENAI_API_KEY) {
+      throw new Error('No OpenAI API key available. Please add your API key in settings.')
+    }
+    
+    return openai
+  } catch (error) {
+    console.error('Error getting OpenAI client for user:', error)
+    if (!process.env.OPENAI_API_KEY) {
+      throw new Error('No OpenAI API key available. Please add your API key in settings.')
+    }
+    return openai
+  }
+}
+
+export async function createAssistant(userId: string, name: string, instructions: string, vectorStoreId: string): Promise<string> {
+  try {
+    const client = await getOpenAIClientForUser(userId)
+    
+    const response = await client.beta.assistants.create({
       name,
       instructions,
       tools: [{ type: 'file_search' }],
@@ -29,9 +62,11 @@ export async function createAssistant(name: string, instructions: string, vector
   }
 }
 
-export async function associateFileWithVectorStore(vectorStoreId: string, fileId: string): Promise<void> {
+export async function associateFileWithVectorStore(userId: string, vectorStoreId: string, fileId: string): Promise<void> {
   try {
-    await openai.beta.vectorStores.files.create(vectorStoreId, {
+    const client = await getOpenAIClientForUser(userId)
+    
+    await client.beta.vectorStores.files.create(vectorStoreId, {
       file_id: fileId,
     })
   } catch (error: unknown) {
@@ -40,9 +75,11 @@ export async function associateFileWithVectorStore(vectorStoreId: string, fileId
   }
 }
 
-export async function invokeBotWithMessage(instruction: string, message: string) {
+export async function invokeBotWithMessage(userId: string, instruction: string, message: string) {
   try {
-    const response = await openai.chat.completions.create({
+    const client = await getOpenAIClientForUser(userId)
+    
+    const response = await client.chat.completions.create({
       model: "gpt-4o-mini",
       messages: [
         {
@@ -67,7 +104,7 @@ export async function invokeBotWithMessage(instruction: string, message: string)
       })
       
       if (error.status === 401) {
-        throw new Error('Invalid OpenAI API key. Please check your environment variables.')
+        throw new Error('Invalid OpenAI API key. Please check your settings.')
       }
     }
     throw error
