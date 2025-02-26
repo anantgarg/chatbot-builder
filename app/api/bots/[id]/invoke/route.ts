@@ -4,19 +4,7 @@ import { verifyJWT } from '@/lib/jwt'
 import { prisma } from '@/lib/prisma'
 import { getOpenAIClientForUser } from '@/lib/openai'
 
-// Use a dedicated environment variable to control when to use dummy keys
-const useDummyKey = process.env.OPENAI_USE_DUMMY_KEY === 'true'
-
 export async function POST(request: Request, context: { params: Promise<{ id: string }> }) {
-  // Skip actual API calls only when explicitly configured to do so
-  if (useDummyKey && !process.env.OPENAI_API_KEY) {
-    console.log('Using dummy key as configured by OPENAI_USE_DUMMY_KEY, returning dummy response')
-    return NextResponse.json({ 
-      response: 'This is a dummy response when OPENAI_USE_DUMMY_KEY is enabled',
-      threadId: 'dummy-thread-id'
-    });
-  }
-
   try {
     const cookieStore = await cookies();
     const token = cookieStore.get('token')?.value;

@@ -48,6 +48,7 @@ export async function GET() {
       // Test the key with a simple API call
       console.log(`Testing OpenAI API key: ${maskedKey}`)
       
+      // Create a new client instance with the user's API key
       const openai = new OpenAI({
         apiKey: trimmedApiKey
       })

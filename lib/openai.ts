@@ -2,41 +2,38 @@ import OpenAI from 'openai'
 import { APIError } from 'openai'
 import { prisma } from './prisma'
 
-// Use a dedicated environment variable to control when to use dummy keys
-// Set OPENAI_USE_DUMMY_KEY=true during build if needed
-const useDummyKey = process.env.OPENAI_USE_DUMMY_KEY === 'true'
+// Remove the global client initialization and environment variable checks
+// Instead, create a function to get the default client only when needed
 
-console.log('OpenAI client configuration:', {
-  nodeEnv: process.env.NODE_ENV,
-  useDummyKey,
-  hasApiKey: !!process.env.OPENAI_API_KEY
-})
-
-if (!process.env.OPENAI_API_KEY) {
-  console.warn('Missing OPENAI_API_KEY environment variable. Will rely on user-provided keys.')
-}
-
-// Default OpenAI client using the environment variable
-// Use dummy key only when explicitly configured to do so
-export const openai = new OpenAI({
-  apiKey: useDummyKey && !process.env.OPENAI_API_KEY 
-    ? 'dummy-key-for-build-process'
-    : process.env.OPENAI_API_KEY,
-})
-
-// Function to get an OpenAI client with a user's API key
-export async function getOpenAIClientForUser(userId: string): Promise<OpenAI> {
-  // Only use dummy key when explicitly configured to do so
-  if (useDummyKey && !process.env.OPENAI_API_KEY) {
-    console.log('Using dummy key for OpenAI client as configured by OPENAI_USE_DUMMY_KEY')
+/**
+ * Get the default OpenAI client using the environment variable
+ * This is only used as a fallback and not initialized at startup
+ */
+function getDefaultOpenAIClient(): OpenAI {
+  if (!process.env.OPENAI_API_KEY) {
+    console.warn('Missing OPENAI_API_KEY environment variable. Using dummy key for build/testing.')
     return new OpenAI({
       apiKey: 'dummy-key-for-build-process'
     })
   }
+  
+  return new OpenAI({
+    apiKey: process.env.OPENAI_API_KEY
+  })
+}
 
+// Function to get an OpenAI client with a user's API key
+export async function getOpenAIClientForUser(userId: string): Promise<OpenAI> {
   try {
     console.log(`Retrieving OpenAI client for user ${userId}`)
-    console.log(`Current environment: NODE_ENV=${process.env.NODE_ENV}, VERCEL_ENV=${process.env.VERCEL_ENV || 'not set'}`)
+    
+    // Skip database lookup during build/testing if needed
+    if (process.env.NODE_ENV === 'test' || process.env.OPENAI_USE_DUMMY_KEY === 'true') {
+      console.log('Using dummy key for OpenAI client (test/build environment)')
+      return new OpenAI({
+        apiKey: 'dummy-key-for-build-process'
+      })
+    }
     
     const user = await prisma.user.findUnique({
       where: { id: userId },
@@ -85,6 +82,11 @@ export async function getOpenAIClientForUser(userId: string): Promise<OpenAI> {
     console.error('Error getting OpenAI client for user:', error)
     throw new Error('Failed to get OpenAI client. Please check your API key in settings.')
   }
+}
+
+// Export the getOpenAIClient function for cases where we need a client but don't have a user ID
+export function getOpenAIClient(): OpenAI {
+  return getDefaultOpenAIClient()
 }
 
 export async function createAssistant(userId: string, name: string, instructions: string, vectorStoreId: string): Promise<string> {
