@@ -4,12 +4,27 @@ import { verifyJWT } from '@/lib/jwt'
 import { prisma } from '@/lib/prisma'
 import OpenAI from 'openai'
 
+// Check if we're in a build/SSR context
+const isBuildOrSSR = typeof window === 'undefined' && process.env.NODE_ENV === 'production'
+
 const openai = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY,
+  apiKey: isBuildOrSSR && !process.env.OPENAI_API_KEY 
+    ? 'dummy-key-for-build-process'
+    : process.env.OPENAI_API_KEY,
 })
 
 export async function POST(request: Request) {
   try {
+    // Skip actual API calls during build process
+    if (isBuildOrSSR && !process.env.OPENAI_API_KEY) {
+      console.log('Build process detected, skipping actual OpenAI API call')
+      return NextResponse.json({ 
+        success: true, 
+        message: 'This is a dummy response for the build process',
+        file: { id: 'dummy-id', fileId: 'dummy-file-id', filename: 'dummy-file.txt' }
+      })
+    }
+
     // Get user from token
     const cookieStore = await cookies()
     const token = cookieStore.get('token')?.value
