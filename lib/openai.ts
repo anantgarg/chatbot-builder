@@ -102,6 +102,18 @@ export async function createAssistant(userId: string, name: string, instructions
   try {
     const client = await getOpenAIClientForUser(userId)
     
+    console.log(`Creating assistant with name "${name}" for user ${userId} using vector store ${vectorStoreId}`)
+    
+    // First verify the vector store exists
+    try {
+      console.log(`Verifying vector store ${vectorStoreId} exists...`)
+      const vectorStore = await client.beta.vectorStores.retrieve(vectorStoreId)
+      console.log(`Vector store verified: ${vectorStore.id}`)
+    } catch (vsError) {
+      console.error(`Vector store verification failed:`, vsError)
+      // Continue anyway - it might be a timing issue
+    }
+    
     const response = await client.beta.assistants.create({
       name,
       instructions,
@@ -121,6 +133,10 @@ export async function createAssistant(userId: string, name: string, instructions
     if (error instanceof APIError) {
       if (error.status === 401) {
         throw new Error(`Authentication failed: Invalid API key. Please check your API key in settings. Details: ${error.message}`)
+      }
+      
+      if (error.message && error.message.includes('vector_store_ids')) {
+        throw new Error(`Vector store issue: ${error.message}. This might be a timing issue with OpenAI's API.`)
       }
     }
     

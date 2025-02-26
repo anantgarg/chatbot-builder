@@ -97,6 +97,10 @@ export async function POST(request: Request) {
       const vectorStoreId = await createVectorStore(data.name, payload.userId)
       console.log('Vector store created:', vectorStoreId)
 
+      // Add a small delay to ensure the vector store is registered
+      console.log('Waiting for vector store to be fully registered...')
+      await new Promise(resolve => setTimeout(resolve, 2000))
+
       // 2. Create Assistant
       console.log('Creating assistant...')
       const assistantId = await createAssistant(
