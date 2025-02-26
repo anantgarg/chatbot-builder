@@ -22,6 +22,8 @@ export default function Dashboard() {
   const [isCreating, setIsCreating] = useState(false)
   const [editingBot, setEditingBot] = useState<Bot | null>(null)
   const [isLoading, setIsLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
+  const [isSubmitting, setIsSubmitting] = useState(false)
   
   useEffect(() => {
     fetchBots()
@@ -43,6 +45,9 @@ export default function Dashboard() {
   }
 
   const addBot = async (bot: BotInput) => {
+    setError(null);
+    setIsSubmitting(true);
+    
     try {
       const response = await fetch('/api/bots', {
         method: 'POST',
@@ -52,16 +57,27 @@ export default function Dashboard() {
         body: JSON.stringify(bot)
       })
       
+      const data = await response.json();
+      
       if (!response.ok) {
-        throw new Error('Failed to create bot')
+        // Handle specific error codes
+        if (data.code === 'VECTOR_STORE_NOT_FOUND') {
+          setError('The vector store was created but OpenAI could not find it immediately. Please try again in a few seconds.');
+        } else if (data.code === 'API_KEY_ERROR') {
+          setError('There was an issue with your OpenAI API key. Please check your settings.');
+        } else {
+          setError(data.error || 'Failed to create bot');
+        }
+        return;
       }
       
-      const newBot = await response.json()
-      setBots(prevBots => [newBot, ...prevBots])
-      setIsCreating(false)
-    } catch (error) {
-      console.error('Failed to create bot:', error)
-      throw error
+      setBots(prevBots => [data, ...prevBots]);
+      setIsCreating(false);
+    } catch (error: any) {
+      console.error('Failed to create bot:', error);
+      setError(error.message || 'An unexpected error occurred');
+    } finally {
+      setIsSubmitting(false);
     }
   }
 
@@ -114,12 +130,43 @@ export default function Dashboard() {
       <div className="flex justify-between items-center mb-6">
         <h1 className="text-2xl font-bold">Bots</h1>
         <button
-          onClick={() => setIsCreating(true)}
+          onClick={() => {
+            setError(null);
+            setIsCreating(true);
+          }}
           className="px-4 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700"
         >
           New Bot
         </button>
       </div>
+
+      {error && (
+        <div className="mb-6 p-4 border-l-4 border-red-500 bg-red-50 text-red-700">
+          <div className="flex">
+            <div className="flex-shrink-0">
+              <svg className="h-5 w-5 text-red-400" viewBox="0 0 20 20" fill="currentColor">
+                <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
+              </svg>
+            </div>
+            <div className="ml-3">
+              <p className="text-sm">{error}</p>
+            </div>
+            <div className="ml-auto pl-3">
+              <div className="-mx-1.5 -my-1.5">
+                <button
+                  onClick={() => setError(null)}
+                  className="inline-flex rounded-md p-1.5 text-red-500 hover:bg-red-100 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500"
+                >
+                  <span className="sr-only">Dismiss</span>
+                  <svg className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                    <path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd" />
+                  </svg>
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
       <div className="bg-white shadow rounded-lg overflow-hidden">
         <table className="min-w-full divide-y divide-gray-200">
@@ -216,6 +263,7 @@ export default function Dashboard() {
         isOpen={isCreating}
         onClose={() => setIsCreating(false)}
         onSubmit={addBot}
+        isSubmitting={isSubmitting}
       />
 
       <BotModal
@@ -227,6 +275,7 @@ export default function Dashboard() {
           }
         }}
         initialBot={editingBot || undefined}
+        isSubmitting={isSubmitting}
       />
     </div>
   )
