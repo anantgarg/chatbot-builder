@@ -2,9 +2,21 @@ import { NextResponse } from 'next/server'
 import { cookies } from 'next/headers'
 import { verifyJWT } from '@/lib/jwt'
 import { prisma } from '@/lib/prisma'
-import { openai } from '@/lib/openai'
+import { openai, getOpenAIClientForUser } from '@/lib/openai'
+
+// Check if we're in a build/SSR context
+const isBuildOrSSR = typeof window === 'undefined' && process.env.NODE_ENV === 'production'
 
 export async function POST(request: Request, context: { params: Promise<{ id: string }> }) {
+  // Skip actual API calls during build process
+  if (isBuildOrSSR && !process.env.OPENAI_API_KEY) {
+    console.log('Build process detected, skipping actual OpenAI API call')
+    return NextResponse.json({ 
+      response: 'This is a dummy response for the build process',
+      threadId: 'dummy-thread-id'
+    });
+  }
+
   try {
     const cookieStore = await cookies();
     const token = cookieStore.get('token')?.value;
@@ -41,21 +53,24 @@ export async function POST(request: Request, context: { params: Promise<{ id: st
       return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
     }
 
+    // Get the OpenAI client for the user
+    const client = await getOpenAIClientForUser(payload.userId as string);
+
     let thread;
     try {
-      thread = await openai.beta.threads.retrieve(threadId);
+      thread = await client.beta.threads.retrieve(threadId);
     } catch {
-      thread = await openai.beta.threads.create();
+      thread = await client.beta.threads.create();
     }
 
-    await openai.beta.threads.messages.create(thread.id!, { role: 'user', content: message });
+    await client.beta.threads.messages.create(thread.id!, { role: 'user', content: message });
 
-    const run = await openai.beta.threads.runs.create(thread.id!, { assistant_id: bot.assistantId });
+    const run = await client.beta.threads.runs.create(thread.id!, { assistant_id: bot.assistantId });
 
-    let response = await openai.beta.threads.runs.retrieve(thread.id!, run.id);
+    let response = await client.beta.threads.runs.retrieve(thread.id!, run.id);
     while (response.status === 'in_progress' || response.status === 'queued') {
       await new Promise(resolve => setTimeout(resolve, 1000));
-      response = await openai.beta.threads.runs.retrieve(thread.id!, run.id);
+      response = await client.beta.threads.runs.retrieve(thread.id!, run.id);
     }
 
     if (response.status !== 'completed') {
@@ -63,7 +78,7 @@ export async function POST(request: Request, context: { params: Promise<{ id: st
       return NextResponse.json({ error: 'Failed to get response' }, { status: 500 });
     }
 
-    const messages = await openai.beta.threads.messages.list(thread.id!);
+    const messages = await client.beta.threads.messages.list(thread.id!);
     const lastMessage = messages.data[0];
 
     if (!lastMessage || !lastMessage.content[0] || lastMessage.content[0].type !== 'text') {

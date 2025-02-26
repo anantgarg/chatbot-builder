@@ -2,17 +2,28 @@ import OpenAI from 'openai'
 import { APIError } from 'openai'
 import { prisma } from './prisma'
 
+// Check if we're in a build/SSR context or client-side
+const isBuildOrSSR = typeof window === 'undefined' && process.env.NODE_ENV === 'production'
+
 if (!process.env.OPENAI_API_KEY) {
   console.warn('Missing OPENAI_API_KEY environment variable. Will rely on user-provided keys.')
 }
 
 // Default OpenAI client using the environment variable
+// During build, use a dummy API key to prevent errors
 export const openai = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY,
+  apiKey: isBuildOrSSR && !process.env.OPENAI_API_KEY 
+    ? 'dummy-key-for-build-process'
+    : process.env.OPENAI_API_KEY,
 })
 
 // Function to get an OpenAI client with a user's API key
 export async function getOpenAIClientForUser(userId: string): Promise<OpenAI> {
+  // Skip actual API calls during build process
+  if (isBuildOrSSR && !process.env.OPENAI_API_KEY) {
+    return openai
+  }
+
   try {
     const user = await prisma.user.findUnique({
       where: { id: userId },

@@ -1,6 +1,9 @@
 import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
-import { openai } from '@/lib/openai'
+import { openai, getOpenAIClientForUser } from '@/lib/openai'
+
+// Check if we're in a build/SSR context
+const isBuildOrSSR = typeof window === 'undefined' && process.env.NODE_ENV === 'production'
 
 // Mark this route as public
 export const dynamic = 'force-dynamic'
@@ -53,6 +56,15 @@ export async function POST(
   request: Request,
   context: { params: Promise<{ botId: string }> }
 ) {
+  // Skip actual API calls during build process
+  if (isBuildOrSSR && !process.env.OPENAI_API_KEY) {
+    console.log('Build process detected, skipping actual OpenAI API call')
+    return NextResponse.json({ 
+      status: 'OK', 
+      message: 'This is a dummy response for the build process'
+    }, { status: 200 });
+  }
+
   try {
     const { botId } = await context.params;
     const payload: WebhookPayload = await request.json()
@@ -69,6 +81,7 @@ export async function POST(
     const bot = await prisma.bot.findUnique({
       where: { id: botId },
       select: {
+        userId: true,
         cometChatAppId: true,
         cometChatApiKey: true,
         cometChatRegion: true,
@@ -122,34 +135,37 @@ export async function POST(
       }, { status: 200 })
     }
 
+    // Get the OpenAI client for the user
+    const client = await getOpenAIClientForUser(bot.userId)
+
     // Get or create OpenAI thread based on CometChat conversation ID
     let thread
     try {
       // Try to retrieve existing thread
-      thread = await openai.beta.threads.retrieve(payload.data.conversationId)
+      thread = await client.beta.threads.retrieve(payload.data.conversationId)
       console.log('Retrieved existing thread:', thread.id)
     } catch {
       // Create new thread if it doesn't exist
-      thread = await openai.beta.threads.create()
+      thread = await client.beta.threads.create()
       console.log('Created new thread:', thread.id)
     }
 
     // Add the user's message to the thread
-    await openai.beta.threads.messages.create(thread.id, {
+    await client.beta.threads.messages.create(thread.id, {
       role: 'user',
       content: payload.data.data.text
     })
 
     // Run the assistant
-    const run = await openai.beta.threads.runs.create(thread.id, {
+    const run = await client.beta.threads.runs.create(thread.id, {
       assistant_id: bot.assistantId
     })
 
     // Wait for completion
-    let response = await openai.beta.threads.runs.retrieve(thread.id, run.id)
+    let response = await client.beta.threads.runs.retrieve(thread.id, run.id)
     while (response.status === 'in_progress' || response.status === 'queued') {
       await new Promise(resolve => setTimeout(resolve, 1000))
-      response = await openai.beta.threads.runs.retrieve(thread.id, run.id)
+      response = await client.beta.threads.runs.retrieve(thread.id, run.id)
     }
 
     if (response.status !== 'completed') {
@@ -158,7 +174,7 @@ export async function POST(
     }
 
     // Get the assistant's response
-    const messages = await openai.beta.threads.messages.list(thread.id)
+    const messages = await client.beta.threads.messages.list(thread.id)
     const lastMessage = messages.data[0]
 
     if (!lastMessage || !lastMessage.content[0] || lastMessage.content[0].type !== 'text') {
