@@ -1,5 +1,5 @@
-const { prisma } = require('../lib/prisma')
-const bcrypt = require('bcryptjs')
+import { prisma } from '../lib/prisma'
+import * as bcrypt from 'bcryptjs'
 
 async function createTestUser() {
   try {
