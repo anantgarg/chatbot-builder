@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server'
 import { cookies } from 'next/headers'
 import { verifyJWT } from '@/lib/jwt'
 import { prisma } from '@/lib/prisma'
-import { getOpenAIClientForUser } from '@/lib/openai'
+import { getOpenAIClientForUser, associateFileWithVectorStore, disassociateFileFromVectorStore } from '@/lib/openai'
 import { APIError } from 'openai'
 import type { File, Bot, FileToBot } from '@prisma/client'
 
@@ -114,9 +114,8 @@ export async function POST(request: Request) {
               const openaiFileId = file.fileId;
               console.log(`Using OpenAI file ID for association: ${openaiFileId}`);
               
-              await client.beta.vectorStores.files.create(bot.vectorStoreId!, {
-                file_id: openaiFileId
-              })
+              // Use the dedicated helper function to associate the file with the vector store
+              await associateFileWithVectorStore(payload.userId as string, bot.vectorStoreId!, openaiFileId);
               
               console.log(`Successfully associated file ${fileId} with vector store ${bot.vectorStoreId}`)
             } catch (error: unknown) {
@@ -249,15 +248,12 @@ export async function DELETE(request: Request) {
         try {
           // Remove from OpenAI vector store
           try {
-            // Get the OpenAI client for the user
-            const client = await getOpenAIClientForUser(payload.userId as string)
-            
-            await client.beta.vectorStores.files.del(bot.vectorStoreId, fileId)
+            // Use the dedicated helper function to disassociate the file from the vector store
+            await disassociateFileFromVectorStore(payload.userId as string, bot.vectorStoreId, fileId);
           } catch (error: unknown) {
-            // If error is not about file not found, rethrow
-            if (error instanceof APIError && !error.message?.includes('not found')) {
-              throw error
-            }
+            // The helper function already handles "not found" errors
+            console.error(`Error disassociating file from vector store:`, error);
+            throw error;
           }
 
           // Remove relationship from database
@@ -299,6 +295,16 @@ export async function GET(request: Request) {
       return NextResponse.json([])
     }
 
+    const cookieStore = await cookies()
+    const token = cookieStore.get('token')?.value
+    if (!token) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    }
+    const payload = await verifyJWT(token)
+    if (!payload || !payload.userId) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    }
+
     const { searchParams } = new URL(request.url)
     const fileId = searchParams.get('fileId')
 
@@ -309,9 +315,11 @@ export async function GET(request: Request) {
       )
     }
 
+    // Verify file ownership
     const file = await prisma.file.findFirst({
       where: { 
-        fileId: fileId 
+        fileId: fileId,
+        userId: payload.userId
       },
       include: {
         bots: {

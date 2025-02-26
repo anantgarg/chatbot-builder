@@ -168,6 +168,22 @@ export async function associateFileWithVectorStore(userId: string, vectorStoreId
   }
 }
 
+export async function disassociateFileFromVectorStore(userId: string, vectorStoreId: string, fileId: string): Promise<void> {
+  try {
+    const client = await getOpenAIClientForUser(userId)
+    
+    await client.beta.vectorStores.files.del(vectorStoreId, fileId)
+  } catch (error: unknown) {
+    console.error('OpenAI Vector Store File Disassociation Error:', error)
+    
+    // If the error is not about the file not being found, rethrow
+    if (error instanceof APIError && !error.message?.includes('not found')) {
+      throw error
+    }
+    // Otherwise, we can ignore "not found" errors as the file is already not associated
+  }
+}
+
 export async function invokeBotWithMessage(userId: string, instruction: string, message: string) {
   try {
     const client = await getOpenAIClientForUser(userId)
