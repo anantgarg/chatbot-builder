@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
-import { openai, getOpenAIClientForUser } from '@/lib/openai'
+import { getOpenAIClientForUser } from '@/lib/openai'
 
 // Check if we're in a build/SSR context
 const isBuildOrSSR = typeof window === 'undefined' && process.env.NODE_ENV === 'production'
