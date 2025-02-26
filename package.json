@@ -7,6 +7,7 @@
     "build": "prisma generate && next build",
     "start": "next start",
     "lint": "next lint",
+    "postinstall": "prisma generate && prisma migrate deploy",
     "dev:migrate": "prisma migrate dev --schema=./prisma/schema.dev.prisma",
     "dev:generate": "prisma generate --schema=./prisma/schema.dev.prisma",
     "migrate": "prisma migrate deploy",
