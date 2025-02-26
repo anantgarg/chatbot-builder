@@ -105,9 +105,6 @@ export async function POST(request: Request) {
           // Skip OpenAI association if already exists
           if (!existingBotIds.includes(bot.id)) {
             try {
-              // Get the OpenAI client for the user
-              const client = await getOpenAIClientForUser(payload.userId as string)
-              
               console.log(`Associating file ${fileId} with vector store ${bot.vectorStoreId} for bot ${bot.id}`)
               
               // Ensure we're using the OpenAI file ID, not the database ID
