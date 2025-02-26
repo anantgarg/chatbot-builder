@@ -67,7 +67,7 @@ export async function POST(request: Request) {
     try {
       // 1. Create Vector Store
       console.log('Creating vector store...')
-      const vectorStoreId = await createVectorStore(data.name)
+      const vectorStoreId = await createVectorStore(data.name, payload.userId)
       console.log('Vector store created:', vectorStoreId)
 
       // 2. Create Assistant

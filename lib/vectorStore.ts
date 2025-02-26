@@ -1,4 +1,5 @@
 import OpenAI, { APIError } from 'openai'
+import { getOpenAIClientForUser } from './openai'
 
 // Check if we're in a build/SSR context or client-side
 const isBuildOrSSR = typeof window === 'undefined' && process.env.NODE_ENV === 'production'
@@ -9,7 +10,7 @@ const openai = new OpenAI({
     : process.env.OPENAI_API_KEY,
 })
 
-export async function createVectorStore(name: string): Promise<string> {
+export async function createVectorStore(name: string, userId?: string): Promise<string> {
   // Skip actual API calls during build process
   if (isBuildOrSSR && !process.env.OPENAI_API_KEY) {
     console.log('Build process detected, skipping actual OpenAI API call')
@@ -17,7 +18,10 @@ export async function createVectorStore(name: string): Promise<string> {
   }
 
   try {
-    const response = await openai.beta.vectorStores.create({
+    // Use user-specific client if userId is provided
+    const client = userId ? await getOpenAIClientForUser(userId) : openai
+    
+    const response = await client.beta.vectorStores.create({
       name,
     })
     console.log('Vector store creation response:', response)
