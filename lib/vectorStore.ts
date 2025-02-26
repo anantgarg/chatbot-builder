@@ -1,12 +1,16 @@
 import { APIError } from 'openai'
 import { getOpenAIClientForUser } from './openai'
 
-// Check if we're in a build/SSR context or client-side
-const isBuildOrSSR = typeof window === 'undefined' && process.env.NODE_ENV === 'production'
+// More specific check for build time vs regular SSR
+// VERCEL_ENV is set to 'production', 'preview', or 'development' in normal operation
+// It will not be set during the build process
+const isBuildTime = typeof window === 'undefined' && 
+                   process.env.NODE_ENV === 'production' && 
+                   !process.env.VERCEL_ENV
 
 export async function createVectorStore(name: string, userId: string): Promise<string> {
-  // Skip actual API calls during build process
-  if (isBuildOrSSR && !process.env.OPENAI_API_KEY) {
+  // Skip actual API calls during build process only (not regular SSR)
+  if (isBuildTime && !process.env.OPENAI_API_KEY) {
     console.log('Build process detected, skipping actual OpenAI API call')
     return 'dummy-vector-store-id-for-build'
   }

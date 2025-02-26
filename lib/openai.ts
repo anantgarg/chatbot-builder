@@ -2,8 +2,12 @@ import OpenAI from 'openai'
 import { APIError } from 'openai'
 import { prisma } from './prisma'
 
-// Check if we're in a build/SSR context or client-side
-const isBuildOrSSR = typeof window === 'undefined' && process.env.NODE_ENV === 'production'
+// More specific check for build time vs regular SSR
+// VERCEL_ENV is set to 'production', 'preview', or 'development' in normal operation
+// It will not be set during the build process
+const isBuildTime = typeof window === 'undefined' && 
+                    process.env.NODE_ENV === 'production' && 
+                    !process.env.VERCEL_ENV
 
 if (!process.env.OPENAI_API_KEY) {
   console.warn('Missing OPENAI_API_KEY environment variable. Will rely on user-provided keys.')
@@ -12,15 +16,15 @@ if (!process.env.OPENAI_API_KEY) {
 // Default OpenAI client using the environment variable
 // During build, use a dummy API key to prevent errors
 export const openai = new OpenAI({
-  apiKey: isBuildOrSSR && !process.env.OPENAI_API_KEY 
+  apiKey: isBuildTime && !process.env.OPENAI_API_KEY 
     ? 'dummy-key-for-build-process'
     : process.env.OPENAI_API_KEY,
 })
 
 // Function to get an OpenAI client with a user's API key
 export async function getOpenAIClientForUser(userId: string): Promise<OpenAI> {
-  // Skip actual API calls during build process
-  if (isBuildOrSSR && !process.env.OPENAI_API_KEY) {
+  // Skip actual API calls during build process only (not regular SSR)
+  if (isBuildTime && !process.env.OPENAI_API_KEY) {
     console.log('Build process detected, using dummy key for OpenAI client')
     return new OpenAI({
       apiKey: 'dummy-key-for-build-process'
@@ -34,6 +38,7 @@ export async function getOpenAIClientForUser(userId: string): Promise<OpenAI> {
     })
 
     if (user?.openaiApiKey) {
+      console.log(`Using API key for user ${userId}`)
       return new OpenAI({
         apiKey: user.openaiApiKey,
       })
@@ -65,7 +70,16 @@ export async function createAssistant(userId: string, name: string, instructions
     return response.id
   } catch (error: unknown) {
     console.error('OpenAI Assistant Creation Error:', error)
-    throw new Error('Failed to create assistant')
+    
+    // Improve error handling for API key issues
+    if (error instanceof APIError) {
+      if (error.status === 401) {
+        throw new Error(`Authentication failed: Invalid API key. Please check your API key in settings. Details: ${error.message}`)
+      }
+    }
+    
+    // Re-throw the original error with additional context
+    throw error
   }
 }
 

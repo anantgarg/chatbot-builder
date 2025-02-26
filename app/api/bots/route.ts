@@ -77,6 +77,17 @@ export async function POST(request: Request) {
         { status: 400 }
       )
     }
+    
+    // Validate API key format - basic check
+    if (user.openaiApiKey.trim() === '' || !user.openaiApiKey.startsWith('sk-')) {
+      return NextResponse.json(
+        { 
+          error: 'Invalid OpenAI API key format. API keys should start with "sk-".',
+          code: 'INVALID_API_KEY_FORMAT'
+        },
+        { status: 400 }
+      )
+    }
 
     const data = await request.json()
 
@@ -117,7 +128,21 @@ export async function POST(request: Request) {
       console.error('Specific error during bot creation:', error)
       
       // Type guard to check if error is an object with a message property
-      const errorWithMessage = error as { message?: string, code?: string };
+      const errorWithMessage = error as { message?: string, code?: string, status?: number };
+      
+      // Handle authentication errors (wrong API key)
+      if (errorWithMessage.status === 401 || 
+          (errorWithMessage.message && errorWithMessage.message.includes('401')) ||
+          (errorWithMessage.message && errorWithMessage.message.toLowerCase().includes('incorrect api key'))) {
+        return NextResponse.json(
+          { 
+            error: 'Authentication failed with OpenAI: Invalid API key. Please check your API key in settings.',
+            details: errorWithMessage.message,
+            code: 'INVALID_API_KEY'
+          },
+          { status: 401 }
+        )
+      }
       
       // Handle vector store not found error
       if (errorWithMessage.message && errorWithMessage.message.includes('Vector store with id') && errorWithMessage.message.includes('not found')) {
