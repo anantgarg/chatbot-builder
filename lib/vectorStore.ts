@@ -1,4 +1,4 @@
-import OpenAI, { APIError } from 'openai'
+import { APIError } from 'openai'
 import { getOpenAIClientForUser } from './openai'
 
 // Check if we're in a build/SSR context or client-side
