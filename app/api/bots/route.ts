@@ -72,6 +72,7 @@ export async function POST(request: Request) {
     // 2. Create Assistant
     console.log('Creating assistant...')
     const assistantId = await createAssistant(
+      payload.userId,
       data.name,
       data.instruction,
       vectorStoreId
