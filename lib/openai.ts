@@ -21,7 +21,10 @@ export const openai = new OpenAI({
 export async function getOpenAIClientForUser(userId: string): Promise<OpenAI> {
   // Skip actual API calls during build process
   if (isBuildOrSSR && !process.env.OPENAI_API_KEY) {
-    return openai
+    console.log('Build process detected, using dummy key for OpenAI client')
+    return new OpenAI({
+      apiKey: 'dummy-key-for-build-process'
+    })
   }
 
   try {
@@ -36,18 +39,11 @@ export async function getOpenAIClientForUser(userId: string): Promise<OpenAI> {
       })
     }
 
-    // Fall back to the default client if user doesn't have an API key
-    if (!process.env.OPENAI_API_KEY) {
-      throw new Error('No OpenAI API key available. Please add your API key in settings.')
-    }
-    
-    return openai
+    // Don't fall back to the default client, throw an error instead
+    throw new Error('No OpenAI API key found for this user. Please add your API key in settings.')
   } catch (error) {
     console.error('Error getting OpenAI client for user:', error)
-    if (!process.env.OPENAI_API_KEY) {
-      throw new Error('No OpenAI API key available. Please add your API key in settings.')
-    }
-    return openai
+    throw new Error('Failed to get OpenAI client. Please check your API key in settings.')
   }
 }
 

@@ -62,6 +62,22 @@ export async function POST(request: Request) {
       )
     }
 
+    // Check if user has an API key
+    const user = await prisma.user.findUnique({
+      where: { id: payload.userId },
+      select: { openaiApiKey: true }
+    })
+
+    if (!user?.openaiApiKey) {
+      return NextResponse.json(
+        { 
+          error: 'OpenAI API key not found. Please add your API key in the settings page.',
+          code: 'API_KEY_MISSING'
+        },
+        { status: 400 }
+      )
+    }
+
     const data = await request.json()
 
     try {
