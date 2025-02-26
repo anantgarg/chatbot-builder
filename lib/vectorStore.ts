@@ -2,11 +2,16 @@ import { APIError } from 'openai'
 import { getOpenAIClientForUser } from './openai'
 
 // More specific check for build time vs regular SSR
-// VERCEL_ENV is set to 'production', 'preview', or 'development' in normal operation
-// It will not be set during the build process
+// Various Vercel environment variables that should be present during normal operation
+// but not during build time
+const hasVercelEnv = process.env.VERCEL_ENV !== undefined
+const hasVercelRegion = process.env.VERCEL_REGION !== undefined
+const hasVercelUrl = process.env.VERCEL_URL !== undefined
+
+// Only true during build time, not during normal server operation 
 const isBuildTime = typeof window === 'undefined' && 
                    process.env.NODE_ENV === 'production' && 
-                   !process.env.VERCEL_ENV
+                   !hasVercelEnv && !hasVercelRegion && !hasVercelUrl
 
 export async function createVectorStore(name: string, userId: string): Promise<string> {
   // Skip actual API calls during build process only (not regular SSR)
@@ -16,9 +21,12 @@ export async function createVectorStore(name: string, userId: string): Promise<s
   }
 
   try {
+    console.log(`Creating vector store with name "${name}" for user ${userId}`)
+    
     // Always use user-specific client
     const client = await getOpenAIClientForUser(userId)
     
+    console.log('Successfully obtained OpenAI client, creating vector store...')
     const response = await client.beta.vectorStores.create({
       name,
     })

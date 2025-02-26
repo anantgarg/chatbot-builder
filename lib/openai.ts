@@ -3,11 +3,24 @@ import { APIError } from 'openai'
 import { prisma } from './prisma'
 
 // More specific check for build time vs regular SSR
-// VERCEL_ENV is set to 'production', 'preview', or 'development' in normal operation
-// It will not be set during the build process
+// Various Vercel environment variables that should be present during normal operation
+// but not during build time
+const hasVercelEnv = process.env.VERCEL_ENV !== undefined
+const hasVercelRegion = process.env.VERCEL_REGION !== undefined
+const hasVercelUrl = process.env.VERCEL_URL !== undefined
+
+// Only true during build time, not during normal server operation 
 const isBuildTime = typeof window === 'undefined' && 
                     process.env.NODE_ENV === 'production' && 
-                    !process.env.VERCEL_ENV
+                    !hasVercelEnv && !hasVercelRegion && !hasVercelUrl
+
+console.log('Environment detection:', {
+  nodeEnv: process.env.NODE_ENV,
+  vercelEnv: process.env.VERCEL_ENV,
+  vercelRegion: process.env.VERCEL_REGION ? 'set' : 'not set',
+  vercelUrl: process.env.VERCEL_URL ? 'set' : 'not set',
+  isBuildTime
+})
 
 if (!process.env.OPENAI_API_KEY) {
   console.warn('Missing OPENAI_API_KEY environment variable. Will rely on user-provided keys.')
@@ -32,20 +45,53 @@ export async function getOpenAIClientForUser(userId: string): Promise<OpenAI> {
   }
 
   try {
+    console.log(`Retrieving OpenAI client for user ${userId}`)
+    console.log(`Current environment: NODE_ENV=${process.env.NODE_ENV}, VERCEL_ENV=${process.env.VERCEL_ENV || 'not set'}`)
+    console.log(`Is build time detection active: ${isBuildTime}`)
+    
     const user = await prisma.user.findUnique({
       where: { id: userId },
       select: { openaiApiKey: true }
     })
 
-    if (user?.openaiApiKey) {
-      console.log(`Using API key for user ${userId}`)
-      return new OpenAI({
-        apiKey: user.openaiApiKey,
-      })
+    if (!user) {
+      console.error(`User ${userId} not found in database`)
+      throw new Error(`User not found`)
     }
 
-    // Don't fall back to the default client, throw an error instead
-    throw new Error('No OpenAI API key found for this user. Please add your API key in settings.')
+    if (!user.openaiApiKey) {
+      console.error(`No API key found for user ${userId}`)
+      throw new Error('No OpenAI API key found for this user. Please add your API key in settings.')
+    }
+
+    // Trim the API key to remove any accidental whitespace
+    const trimmedApiKey = user.openaiApiKey.trim()
+    
+    if (!trimmedApiKey.startsWith('sk-')) {
+      console.error(`API key for user ${userId} has invalid format (does not start with sk-)`)
+      throw new Error('Invalid API key format. API keys should start with "sk-"')
+    }
+
+    // Log partial key for debugging (first 5 chars and last 4 chars)
+    const keyStart = trimmedApiKey.substring(0, 5)
+    const keyEnd = trimmedApiKey.substring(trimmedApiKey.length - 4)
+    console.log(`Using API key for user ${userId}: ${keyStart}...${keyEnd} (length: ${trimmedApiKey.length})`)
+    
+    try {
+      const client = new OpenAI({
+        apiKey: trimmedApiKey,
+      })
+      
+      // Test the client with a simple API call
+      console.log(`Testing OpenAI client with a simple API call...`)
+      const models = await client.models.list()
+      console.log(`OpenAI client test successful, retrieved ${models.data.length} models`)
+      
+      return client
+    } catch (apiError) {
+      console.error(`Error initializing or testing OpenAI client:`, apiError)
+      throw new Error(`Failed to initialize OpenAI client: ${apiError instanceof Error ? apiError.message : 'Unknown error'}`)
+    }
   } catch (error) {
     console.error('Error getting OpenAI client for user:', error)
     throw new Error('Failed to get OpenAI client. Please check your API key in settings.')

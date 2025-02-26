@@ -7,6 +7,7 @@ export default function SettingsPage() {
   const [openaiApiKey, setOpenaiApiKey] = useState('')
   const [isLoading, setIsLoading] = useState(true)
   const [isSaving, setIsSaving] = useState(false)
+  const [isTesting, setIsTesting] = useState(false)
   const [message, setMessage] = useState({ type: '', text: '' })
   const router = useRouter()
 
@@ -58,6 +59,49 @@ export default function SettingsPage() {
     }
   }
 
+  const testApiKey = async () => {
+    if (!openaiApiKey.trim()) {
+      setMessage({ type: 'error', text: 'Please enter an API key to test' })
+      return
+    }
+
+    setIsTesting(true)
+    setMessage({ type: '', text: '' })
+
+    try {
+      // First, save the API key
+      const saveResponse = await fetch('/api/user/settings', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ openaiApiKey }),
+      })
+
+      if (!saveResponse.ok) {
+        throw new Error('Failed to save API key before testing')
+      }
+
+      // Then test it
+      const response = await fetch('/api/user/test-api-key')
+      const data = await response.json()
+
+      if (data.valid) {
+        setMessage({ type: 'success', text: `API key is valid! ${data.message}` })
+      } else {
+        setMessage({ 
+          type: 'error', 
+          text: `Invalid API key: ${data.error || 'Unknown error'}. ${data.details ? `Details: ${data.details}` : ''}` 
+        })
+      }
+    } catch (error) {
+      console.error('Error testing API key:', error)
+      setMessage({ type: 'error', text: 'Failed to test API key' })
+    } finally {
+      setIsTesting(false)
+    }
+  }
+
   return (
     <div className="container mx-auto px-4 py-8">
       <h1 className="text-2xl font-bold mb-6">User Settings</h1>
@@ -105,7 +149,15 @@ export default function SettingsPage() {
               </div>
             )}
 
-            <div className="flex justify-end">
+            <div className="flex justify-end space-x-4">
+              <button
+                type="button"
+                onClick={testApiKey}
+                disabled={isTesting || !openaiApiKey.trim()}
+                className="px-4 py-2 bg-gray-600 text-white rounded-md hover:bg-gray-700 transition-colors disabled:opacity-50"
+              >
+                {isTesting ? 'Testing...' : 'Test API Key'}
+              </button>
               <button
                 type="submit"
                 disabled={isSaving}
