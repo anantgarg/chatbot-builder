@@ -1,15 +1,78 @@
 # Chatbot Builder
 
-A platform for creating and managing AI-powered chatbots with OpenAI integration and optional CometChat support.
+<div align="center">
+  <img src="https://img.shields.io/badge/Next.js-15.1.3-black" alt="Next.js" />
+  <img src="https://img.shields.io/badge/OpenAI-API-412991" alt="OpenAI API" />
+  <img src="https://img.shields.io/badge/Vercel-Deployment-000000" alt="Vercel" />
+  <img src="https://img.shields.io/badge/PostgreSQL-Database-336791" alt="PostgreSQL" />
+</div>
 
-## Prerequisites
+<br>
+
+A modern platform for creating and managing AI-powered chatbots with OpenAI integration. Build custom chatbots with file-based knowledge and optional CometChat integration for real-time communication.
+
+## ✨ Features
+
+- 🤖 Create and manage multiple AI-powered chatbots
+- 📚 Upload files to enhance your bot's knowledge base
+- 🔍 Vector search for accurate and contextual responses
+- 💬 Optional CometChat integration for real-time chat capabilities
+- 🔒 Secure user authentication system
+- 🔑 User-specific OpenAI API keys for privacy and billing control
+
+## 🚀 Deployment on Vercel
+
+### Prerequisites
+
+- [Vercel account](https://vercel.com/signup)
+- [GitHub account](https://github.com/signup)
+- [OpenAI API key](https://platform.openai.com/account/api-keys) with billing set up
+- [PostgreSQL database](https://vercel.com/docs/storage/vercel-postgres) (recommended: Vercel Postgres)
+
+### One-Click Deploy
+
+Deploy directly to Vercel with one click:
+
+[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https%3A%2F%2Fgithub.com%2Fyour-username%2Fchatbot-builder)
+
+### Manual Deployment Steps
+
+1. **Fork the repository**
+   
+   Fork this repository to your GitHub account.
+
+2. **Create a new Vercel project**
+   
+   - Go to [Vercel Dashboard](https://vercel.com/dashboard)
+   - Click "Add New" → "Project"
+   - Import your forked repository
+   
+3. **Configure environment variables**
+   
+   Add the following environment variables in the Vercel project settings:
+   
+   - `DATABASE_URL`: Your PostgreSQL connection string
+   - `JWT_SECRET`: A secure random string for JWT token signing (generate with `openssl rand -hex 32`)
+
+4. **Set up the database**
+   
+   - Create a PostgreSQL database (recommended: use [Vercel Postgres](https://vercel.com/docs/storage/vercel-postgres))
+   - The database schema will be automatically applied during the first deployment
+
+5. **Deploy**
+   
+   Click "Deploy" and wait for the build to complete.
+
+## 💻 Local Development
+
+### Prerequisites
 
 - Node.js 18+ installed
 - npm or yarn package manager
-- OpenAI API key with billing set up
 - Git installed
+- PostgreSQL database
 
-## Setup Instructions
+### Setup Instructions
 
 1. **Clone the repository**
    ```bash
@@ -30,14 +93,14 @@ A platform for creating and managing AI-powered chatbots with OpenAI integration
    cp .env.example .env
    ```
 
-   Now open `.env` and update the following values:
-   - `OPENAI_API_KEY`: Your OpenAI API key from https://platform.openai.com/account/api-keys
+   Update the `.env` file with your values:
+   - `DATABASE_URL`: Your PostgreSQL connection string
    - `JWT_SECRET`: A secure random string for JWT token signing
 
 4. **Initialize the database**
    ```bash
    # Run Prisma migrations
-   npx prisma migrate dev
+   npx prisma migrate deploy
    ```
 
 5. **Create a test user** (optional)
@@ -46,45 +109,40 @@ A platform for creating and managing AI-powered chatbots with OpenAI integration
    npm run create-test-user
    ```
 
-## Running the Project
-
-1. **Start the development server**
+6. **Start the development server**
    ```bash
    npm run dev
-   # or
-   yarn dev
    ```
 
-2. **Access the application**
+7. **Access the application**
    - Open your browser and navigate to `http://localhost:3000`
    - Log in with your credentials (or use test@test.com if you created the test user)
 
-## Features
+## 🔑 API Key Management
 
-- Create and manage multiple chatbots
-- OpenAI integration for AI-powered responses
-- File upload and management
-- Vector store for improved response accuracy
-- Optional CometChat integration for real-time chat (configurable through bot settings)
-- Secure authentication system
+This application uses user-specific OpenAI API keys:
 
-## Environment Variables
+- Each user provides their own OpenAI API key in the settings page
+- API keys are securely stored in the database
+- The OpenAI client is created on-demand for each request using the user's API key
+- No global API key is required for deployment
 
-- `DATABASE_URL`: SQLite database path (default: "./prisma/dev.db")
-- `OPENAI_API_KEY`: Your OpenAI API key (required)
-- `JWT_SECRET`: Secret key for JWT tokens (required)
+## 📦 Project Structure
 
-## Build Process
+```
+chatbot-builder/
+├── app/                  # Next.js app directory
+│   ├── api/              # API routes
+│   ├── bots/             # Bot management pages
+│   ├── files/            # File management pages
+│   └── settings/         # User settings page
+├── components/           # React components
+├── lib/                  # Utility functions
+├── prisma/               # Database schema and migrations
+└── public/               # Static assets
+```
 
-The application uses lazy initialization for the OpenAI client, which means:
-
-1. No OpenAI API key is required during the build process
-2. The OpenAI client is only created when needed at runtime
-3. Each user's API key (stored in the database) is used for their requests
-
-This approach prevents build errors related to missing API keys and ensures that each user's requests use their own API key.
-
-## Contributing
+## 🤝 Contributing
 
 1. Fork the repository
 2. Create your feature branch (`git checkout -b feature/amazing-feature`)
@@ -92,6 +150,6 @@ This approach prevents build errors related to missing API keys and ensures that
 4. Push to the branch (`git push origin feature/amazing-feature`)
 5. Open a Pull Request
 
-## License
+## 📄 License
 
 This project is licensed under the MIT License - see the LICENSE file for details.
