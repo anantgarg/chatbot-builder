@@ -94,7 +94,7 @@ export default function SettingsPage() {
                   rel="noopener noreferrer"
                   className="text-indigo-600 hover:text-indigo-500"
                 >
-                  OpenAI's dashboard
+                  OpenAI&apos;s dashboard
                 </a>.
               </p>
             </div>
