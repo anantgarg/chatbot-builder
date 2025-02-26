@@ -97,15 +97,18 @@ export async function POST(request: Request) {
       })
 
       return NextResponse.json(bot)
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Specific error during bot creation:', error)
       
+      // Type guard to check if error is an object with a message property
+      const errorWithMessage = error as { message?: string, code?: string };
+      
       // Handle vector store not found error
-      if (error.message && error.message.includes('Vector store with id') && error.message.includes('not found')) {
+      if (errorWithMessage.message && errorWithMessage.message.includes('Vector store with id') && errorWithMessage.message.includes('not found')) {
         return NextResponse.json(
           { 
             error: 'Failed to create bot: Vector store creation succeeded but OpenAI could not find it immediately. Please try again in a few seconds.',
-            details: error.message,
+            details: errorWithMessage.message,
             code: 'VECTOR_STORE_NOT_FOUND'
           },
           { status: 400 }
@@ -113,10 +116,10 @@ export async function POST(request: Request) {
       }
       
       // Handle OpenAI API key errors
-      if (error.message && error.message.includes('API key')) {
+      if (errorWithMessage.message && errorWithMessage.message.includes('API key')) {
         return NextResponse.json(
           { 
-            error: 'OpenAI API key error: ' + error.message,
+            error: 'OpenAI API key error: ' + errorWithMessage.message,
             code: 'API_KEY_ERROR'
           },
           { status: 400 }
@@ -125,12 +128,16 @@ export async function POST(request: Request) {
       
       throw error; // Re-throw for the outer catch block
     }
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('Error creating bot:', error)
+    
+    // Type guard to check if error is an object with a message property
+    const errorWithMessage = error as { message?: string, code?: string };
+    
     return NextResponse.json(
       { 
-        error: 'Failed to create bot: ' + (error.message || 'Unknown error'),
-        code: error.code || 'UNKNOWN_ERROR'
+        error: 'Failed to create bot: ' + (errorWithMessage.message || 'Unknown error'),
+        code: errorWithMessage.code || 'UNKNOWN_ERROR'
       },
       { status: 500 }
     )

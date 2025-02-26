@@ -73,9 +73,11 @@ export default function Dashboard() {
       
       setBots(prevBots => [data, ...prevBots]);
       setIsCreating(false);
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Failed to create bot:', error);
-      setError(error.message || 'An unexpected error occurred');
+      // Type guard to check if error is an object with a message property
+      const errorWithMessage = error as { message?: string };
+      setError(errorWithMessage.message || 'An unexpected error occurred');
     } finally {
       setIsSubmitting(false);
     }
