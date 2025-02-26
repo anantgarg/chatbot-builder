@@ -51,6 +51,14 @@ export default function UploadPage() {
     setIsLoading(true)
     setMessage(null)
 
+    // Check file size before uploading
+    const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB in bytes
+    if (file.size > MAX_FILE_SIZE) {
+      setMessage(`Error: File size exceeds the maximum allowed limit of 10MB. Your file is ${formatBytes(file.size)}.`);
+      setIsLoading(false);
+      return;
+    }
+
     const formData = new FormData()
     formData.append('file', file)
     formData.append('botId', selectedBotId)
@@ -62,16 +70,26 @@ export default function UploadPage() {
       })
 
       if (!response.ok) {
-        throw new Error('Failed to upload file')
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to upload file')
       }
 
       setMessage('File uploaded successfully')
     } catch (error) {
       console.error('File upload error:', error)
-      setMessage('Failed to upload file')
+      setMessage(error instanceof Error ? `Error: ${error.message}` : 'Error: Failed to upload file')
     } finally {
       setIsLoading(false)
     }
+  }
+
+  // Helper function to format bytes
+  const formatBytes = (bytes: number) => {
+    if (bytes === 0) return '0 Bytes'
+    const k = 1024
+    const sizes = ['Bytes', 'KB', 'MB', 'GB']
+    const i = Math.floor(Math.log(bytes) / Math.log(k))
+    return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i]
   }
 
   return (

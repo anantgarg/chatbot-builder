@@ -63,6 +63,13 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'File not found' }, { status: 404 })
     }
 
+    console.log(`Found file in database:`, {
+      id: file.id,
+      fileId: file.fileId,
+      filename: file.filename,
+      existingBots: file.bots.length
+    });
+
     // Get existing bot associations
     const existingBotIds = file.bots.map(fb => fb.botId)
 
@@ -75,6 +82,12 @@ export async function POST(request: Request) {
         userId: payload.userId
       }
     })
+
+    console.log(`Found ${bots.length} bots to associate with:`, bots.map(bot => ({
+      id: bot.id,
+      name: bot.name,
+      vectorStoreId: bot.vectorStoreId
+    })));
 
     if (bots.length !== botIds.length) {
       return NextResponse.json({ error: 'One or more bots not found' }, { status: 404 })
@@ -95,15 +108,36 @@ export async function POST(request: Request) {
               // Get the OpenAI client for the user
               const client = await getOpenAIClientForUser(payload.userId as string)
               
+              console.log(`Associating file ${fileId} with vector store ${bot.vectorStoreId} for bot ${bot.id}`)
+              
+              // Ensure we're using the OpenAI file ID, not the database ID
+              const openaiFileId = file.fileId;
+              console.log(`Using OpenAI file ID for association: ${openaiFileId}`);
+              
               await client.beta.vectorStores.files.create(bot.vectorStoreId!, {
-                file_id: fileId
+                file_id: openaiFileId
               })
+              
+              console.log(`Successfully associated file ${fileId} with vector store ${bot.vectorStoreId}`)
             } catch (error: unknown) {
               // If error is not about duplicate file, rethrow
               if (error instanceof APIError && !error.message?.includes('already exists')) {
+                console.error(`Error associating file with vector store:`, error);
+                if (error instanceof APIError) {
+                  console.error(`OpenAI API Error Details:`, {
+                    message: error.message,
+                    status: error.status,
+                    code: error.code,
+                    type: error.type
+                  });
+                }
                 throw error
+              } else {
+                console.log(`File already exists in vector store or other non-critical error:`, error);
               }
             }
+          } else {
+            console.log(`File already associated with bot ${bot.id} in database, skipping OpenAI association`)
           }
 
           // Create relationship in database if it doesn't exist
@@ -115,12 +149,16 @@ export async function POST(request: Request) {
           })
 
           if (!existingAssociation) {
+            console.log(`Creating database association between file ${file.id} and bot ${bot.id}`)
             await prisma.fileToBot.create({
               data: {
                 botId: bot.id,
                 fileId: file.id
               }
             })
+            console.log(`Database association created successfully`)
+          } else {
+            console.log(`Database association already exists between file ${file.id} and bot ${bot.id}`)
           }
 
           return bot.id

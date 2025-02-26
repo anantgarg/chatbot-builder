@@ -4,6 +4,16 @@ import { verifyJWT } from '@/lib/jwt'
 import { prisma } from '@/lib/prisma'
 import { getOpenAIClientForUser } from '@/lib/openai'
 
+// Configure this route to handle larger file sizes
+export const config = {
+  api: {
+    bodyParser: {
+      sizeLimit: '10mb', // Increase the size limit to 10MB
+    },
+    responseLimit: false,
+  },
+};
+
 export async function POST(request: Request) {
   try {
     // Get user from token
@@ -24,7 +34,14 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'File is required' }, { status: 400 })
     }
 
-    console.log('Uploading file to OpenAI:', file.name)
+    console.log('Uploading file to OpenAI:', file.name, 'Size:', file.size, 'Type:', file.type)
+
+    // Check file size before uploading
+    if (file.size > 10 * 1024 * 1024) { // 10MB in bytes
+      return NextResponse.json({ 
+        error: 'File size exceeds the maximum allowed limit of 10MB' 
+      }, { status: 413 })
+    }
 
     // Get the OpenAI client for the user
     const client = await getOpenAIClientForUser(payload.userId as string)

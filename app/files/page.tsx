@@ -76,6 +76,13 @@ export default function FilesPage() {
       setError(null) // Clear previous errors
       console.log(`Attempting to upload file: ${file.name} (${file.size} bytes, type: ${file.type})`)
       
+      // Check file size before uploading
+      const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB in bytes
+      if (file.size > MAX_FILE_SIZE) {
+        setError(`File size exceeds the maximum allowed limit of 10MB. Your file is ${formatBytes(file.size)}.`);
+        return;
+      }
+      
       const formData = new FormData()
       formData.append('file', file)
 

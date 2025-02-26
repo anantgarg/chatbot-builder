@@ -5,6 +5,16 @@ import { prisma } from '@/lib/prisma'
 import { getOpenAIClientForUser } from '@/lib/openai'
 import { APIError } from 'openai'
 
+// Configure this route to handle larger file sizes
+export const config = {
+  api: {
+    bodyParser: {
+      sizeLimit: '10mb', // Increase the size limit to 10MB
+    },
+    responseLimit: false,
+  },
+};
+
 export async function GET() {
   try {
     // Get user from token
@@ -75,6 +85,13 @@ export async function POST(request: Request) {
     }
 
     console.log('Uploading file to OpenAI:', file.name, 'Size:', file.size, 'Type:', file.type)
+
+    // Check file size before uploading
+    if (file.size > 10 * 1024 * 1024) { // 10MB in bytes
+      return NextResponse.json({ 
+        error: 'File size exceeds the maximum allowed limit of 10MB' 
+      }, { status: 413 })
+    }
 
     // Get the OpenAI client for the user
     try {
