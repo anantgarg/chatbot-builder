@@ -209,8 +209,8 @@ export async function POST(
       category: 'message',
       type: 'text',
       data: { text: assistantResponse },
-      receiver: payload.data.sender, // Send back to the original sender
-      receiverType: 'user' // Assuming the sender is always a user
+      receiver: payload.data.receiver,
+      receiverType: payload.data.receiverType.toLowerCase()
     }
 
     console.log('CometChat request body:', JSON.stringify({
