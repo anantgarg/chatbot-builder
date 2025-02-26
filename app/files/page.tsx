@@ -73,23 +73,34 @@ export default function FilesPage() {
     if (!file) return
 
     try {
+      setError(null) // Clear previous errors
+      console.log(`Attempting to upload file: ${file.name} (${file.size} bytes, type: ${file.type})`)
+      
       const formData = new FormData()
       formData.append('file', file)
 
-      const response = await fetch('/api/upload', {
+      const response = await fetch('/api/files', {
         method: 'POST',
         body: formData,
       })
 
+      const responseData = await response.json()
+      
       if (!response.ok) {
-        throw new Error('Failed to upload file')
+        console.error('Upload failed with status:', response.status, responseData)
+        throw new Error(responseData.error || 'Failed to upload file')
       }
 
+      console.log('Upload successful:', responseData)
       // Refresh the file list
       await fetchFiles()
     } catch (err: unknown) {
       console.error('Error uploading file:', err)
-      setError(err instanceof Error ? err.message : 'Failed to upload file')
+      if (err instanceof Error) {
+        setError(`Failed to upload file: ${err.message}`)
+      } else {
+        setError('Failed to upload file: Unknown error')
+      }
     }
   }
 

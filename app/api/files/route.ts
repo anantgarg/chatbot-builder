@@ -74,47 +74,72 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'File is required' }, { status: 400 })
     }
 
-    console.log('Uploading file to OpenAI:', file.name)
+    console.log('Uploading file to OpenAI:', file.name, 'Size:', file.size, 'Type:', file.type)
 
     // Get the OpenAI client for the user
-    const client = await getOpenAIClientForUser(payload.userId as string)
-
-    // Upload the file to OpenAI
-    const response = await client.files.create({
-      file,
-      purpose: 'assistants',
-    })
-
-    console.log('OpenAI file upload response:', response)
-
     try {
-      // Store file information in the database
-      const fileRecord = await prisma.file.create({
-        data: {
-          fileId: response.id,
-          filename: file.name,
-          purpose: response.purpose,
-          bytes: response.bytes,
-          userId: payload.userId
-        },
-      })
+      const client = await getOpenAIClientForUser(payload.userId as string)
+      console.log('OpenAI client initialized successfully')
+      
+      // Upload the file to OpenAI
+      try {
+        const response = await client.files.create({
+          file,
+          purpose: 'assistants',
+        })
 
-      console.log('File record created in database:', fileRecord)
+        console.log('OpenAI file upload response:', response)
 
+        try {
+          // Store file information in the database
+          const fileRecord = await prisma.file.create({
+            data: {
+              fileId: response.id,
+              filename: file.name,
+              purpose: response.purpose,
+              bytes: response.bytes,
+              userId: payload.userId
+            },
+          })
+
+          console.log('File record created in database:', fileRecord)
+
+          return NextResponse.json({ 
+            success: true, 
+            message: 'File uploaded successfully', 
+            file: fileRecord 
+          })
+        } catch (dbError: unknown) {
+          console.error('Database error:', dbError)
+          // Even if database storage fails, the file was uploaded to OpenAI
+          return NextResponse.json({ 
+            success: true, 
+            warning: 'File uploaded to OpenAI but database storage failed',
+            error: dbError instanceof Error ? dbError.message : 'Unknown error',
+            fileId: response.id
+          })
+        }
+      } catch (uploadError: unknown) {
+        console.error('OpenAI file upload error:', uploadError)
+        let errorMessage = 'Failed to upload file to OpenAI'
+        
+        if (uploadError instanceof Error) {
+          errorMessage += ': ' + uploadError.message
+          
+          // Check for specific OpenAI API errors
+          if ('status' in uploadError && typeof uploadError.status === 'number') {
+            errorMessage += ` (Status: ${uploadError.status})`
+          }
+        }
+        
+        return NextResponse.json({ error: errorMessage }, { status: 500 })
+      }
+    } catch (clientError: unknown) {
+      console.error('OpenAI client initialization error:', clientError)
       return NextResponse.json({ 
-        success: true, 
-        message: 'File uploaded successfully', 
-        file: fileRecord 
-      })
-    } catch (dbError: unknown) {
-      console.error('Database error:', dbError)
-      // Even if database storage fails, the file was uploaded to OpenAI
-      return NextResponse.json({ 
-        success: true, 
-        warning: 'File uploaded to OpenAI but database storage failed',
-        error: dbError instanceof Error ? dbError.message : 'Unknown error',
-        fileId: response.id
-      })
+        error: 'Failed to initialize OpenAI client: ' + 
+          (clientError instanceof Error ? clientError.message : 'Unknown error')
+      }, { status: 500 })
     }
   } catch (error: unknown) {
     console.error('File upload error:', error)

@@ -64,16 +64,35 @@ export async function getOpenAIClientForUser(userId: string): Promise<OpenAI> {
     console.log(`Using API key for user ${userId}: ${keyStart}...${keyEnd} (length: ${trimmedApiKey.length})`)
     
     try {
+      console.log('Creating new OpenAI client instance...')
       const client = new OpenAI({
         apiKey: trimmedApiKey,
       })
       
       // Test the client with a simple API call
       console.log(`Testing OpenAI client with a simple API call...`)
-      const models = await client.models.list()
-      console.log(`OpenAI client test successful, retrieved ${models.data.length} models`)
-      
-      return client
+      try {
+        const models = await client.models.list()
+        console.log(`OpenAI client test successful, retrieved ${models.data.length} models`)
+        return client
+      } catch (testError) {
+        console.error('Error testing OpenAI client:', testError)
+        if (testError instanceof APIError) {
+          console.error('OpenAI API Error Details:', {
+            message: testError.message,
+            status: testError.status,
+            code: testError.code,
+            type: testError.type,
+          })
+          
+          if (testError.status === 401) {
+            throw new Error('Invalid API key. Please check your OpenAI API key in settings.')
+          } else if (testError.status === 429) {
+            throw new Error('Rate limit exceeded. Please try again later or check your OpenAI account limits.')
+          }
+        }
+        throw new Error(`Failed to test OpenAI client: ${testError instanceof Error ? testError.message : 'Unknown error'}`)
+      }
     } catch (apiError) {
       console.error(`Error initializing or testing OpenAI client:`, apiError)
       throw new Error(`Failed to initialize OpenAI client: ${apiError instanceof Error ? apiError.message : 'Unknown error'}`)
