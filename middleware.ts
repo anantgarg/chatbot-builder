@@ -39,6 +39,13 @@ export async function middleware(request: NextRequest) {
       console.log('Token verification failed')
       throw new Error('Invalid token')
     }
+    
+    // If user is at the root path, redirect to /bots
+    if (pathname === '/') {
+      console.log('User is logged in and at root path, redirecting to /bots')
+      return NextResponse.redirect(new URL('/bots', request.url))
+    }
+    
     console.log('Token verified successfully, allowing access')
     return NextResponse.next()
   } catch (error) {
