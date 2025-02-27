@@ -20,6 +20,22 @@ interface Bot {
   cometChatBotUid: string | null
 }
 
+interface BotResponse {
+  id: string
+  name: string
+  instruction: string
+  createdAt: string
+  updatedAt: string
+  userId: string
+  assistantId: string | null
+  vectorStoreId: string | null
+  cometChatEnabled: boolean
+  cometChatAppId: string | null
+  cometChatRegion: string | null
+  cometChatApiKey: string | null
+  cometChatBotUid: string | null
+}
+
 export default function BotsPage() {
   const [bots, setBots] = useState<Bot[]>([])
   const [loading, setLoading] = useState(true)
@@ -41,7 +57,7 @@ export default function BotsPage() {
       }
       const data = await response.json()
       // Convert string dates to Date objects
-      const botsWithDates = data.map((bot: any) => ({
+      const botsWithDates = data.map((bot: BotResponse) => ({
         ...bot,
         createdAt: new Date(bot.createdAt),
         updatedAt: new Date(bot.updatedAt)
