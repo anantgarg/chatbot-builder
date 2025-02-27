@@ -30,7 +30,7 @@ export default function Sidebar() {
       <div className="flex-1 flex flex-col pt-5 pb-4">
         <nav className="mt-5 flex-1 px-2 space-y-1">
           <Link
-            href="/"
+            href="/bots"
             className="group flex items-center px-2 py-2 text-sm font-medium rounded-md text-gray-600 hover:bg-gray-50 hover:text-gray-900"
           >
             <ComputerDesktopIcon className="mr-3 h-6 w-6" />
