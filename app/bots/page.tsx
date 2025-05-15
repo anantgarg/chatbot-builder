@@ -43,6 +43,7 @@ export default function BotsPage() {
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [currentBot, setCurrentBot] = useState<Bot | undefined>(undefined)
   const [isSubmitting, setIsSubmitting] = useState(false)
+  const [isCreating, setIsCreating] = useState(false)
 
   useEffect(() => {
     fetchBots()
@@ -126,11 +127,26 @@ export default function BotsPage() {
         if (!response.ok) {
           throw new Error('Failed to update bot')
         }
+      } else {
+        // Create new bot
+        const response = await fetch('/api/bots', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify(botData)
+        })
+        
+        if (!response.ok) {
+          const data = await response.json();
+          throw new Error(data.error || 'Failed to create bot');
+        }
       }
 
       // Refresh the bots list
       fetchBots()
       setIsModalOpen(false)
+      setIsCreating(false)
     } catch (err) {
       setError(err instanceof Error ? err.message : 'An error occurred')
     } finally {
@@ -138,16 +154,21 @@ export default function BotsPage() {
     }
   }
 
+  const openCreateModal = () => {
+    setCurrentBot(undefined)
+    setIsCreating(true)
+  }
+
   return (
     <div className="container mx-auto px-4 py-8">
       <div className="flex justify-between items-center mb-6">
         <h1 className="text-2xl font-bold">Bots</h1>
-        <Link 
-          href="/bots/new" 
+        <button 
+          onClick={openCreateModal}
           className="px-4 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700"
         >
           New Bot
-        </Link>
+        </button>
       </div>
 
       {error && (
@@ -238,9 +259,10 @@ export default function BotsPage() {
       </div>
 
       <BotModal
-        isOpen={isModalOpen}
+        isOpen={isModalOpen || isCreating}
         onClose={() => {
           setIsModalOpen(false)
+          setIsCreating(false)
           setCurrentBot(undefined)
         }}
         onSubmit={handleSubmitBot}
